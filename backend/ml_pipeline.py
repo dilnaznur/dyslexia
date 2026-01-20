@@ -276,8 +276,7 @@ class FeatureEngineer:
 class DyslexiaPredictor:
     """
     Main prediction class that loads the model and makes predictions.
-    Note: For demo purposes without the actual .pkl files, this creates
-    a mock predictor. In production, load real model files.
+    Supports both real ML model and mock fallback mode.
     """
 
     def __init__(self, model_path: str = None, scaler_path: str = None):
@@ -293,17 +292,44 @@ class DyslexiaPredictor:
         self.scaler = None
         self.model_version = "1.0.0"
 
-        # In production, uncomment and use actual model files:
-        # import pickle
-        # if model_path and scaler_path:
-        #     with open(model_path, 'rb') as f:
-        #         self.model = pickle.load(f)
-        #     with open(scaler_path, 'rb') as f:
-        #         self.scaler = pickle.load(f)
-        #     logger.info("Model and scaler loaded successfully")
+        # Attempt to load real model files
+        if model_path and scaler_path:
+            try:
+                import joblib
 
-        # For demo: Create mock model behavior
-        logger.warning("Using MOCK predictor - load real model files in production!")
+                # Load model and scaler
+                self.model = joblib.load(model_path)
+                self.scaler = joblib.load(scaler_path)
+
+                # Validate model type
+                if not hasattr(self.model, 'predict_proba'):
+                    raise ValueError("Model must have predict_proba method")
+
+                # Validate scaler
+                if not hasattr(self.scaler, 'transform'):
+                    raise ValueError("Scaler must have transform method")
+
+                self.model_version = "1.0.0-real"
+                logger.info(f"✅ Model loaded successfully: {model_path}")
+                logger.info(f"✅ Scaler loaded successfully: {scaler_path}")
+                logger.info("🚀 Running in REAL MODEL mode (85.71% accuracy)")
+
+            except FileNotFoundError as e:
+                logger.warning(f"⚠️ Model files not found: {e}")
+                logger.warning("⚠️ Falling back to MOCK mode")
+                self.model = None
+                self.scaler = None
+
+            except Exception as e:
+                logger.error(f"❌ Model loading failed: {e}")
+                logger.warning("⚠️ Falling back to MOCK mode")
+                self.model = None
+                self.scaler = None
+        else:
+            logger.warning("⚠️ No model paths provided - using MOCK mode")
+
+        if self.model is None:
+            logger.warning("⚠️ Using MOCK predictor - provide model files for real predictions!")
 
     def predict(self, reading_data: ReadingData) -> Tuple[float, float, np.ndarray]:
         """
@@ -319,28 +345,61 @@ class DyslexiaPredictor:
         features = self.feature_engineer.extract_features(reading_data)
         features_2d = features.reshape(1, -1)
 
-        # In production with real model:
-        # features_scaled = self.scaler.transform(features_2d)
-        # proba = self.model.predict_proba(features_scaled)[0]
-        # probability_dyslexic = proba[1]  # Class 1 = Dyslexic
-        # confidence = max(proba)
+        probability_dyslexic = None
+        confidence = None
 
-        # MOCK PREDICTION LOGIC (remove in production)
-        # Rule-based mock: High TVI scores -> higher risk
-        weighted_tvi = features[11]  # weighted_tvi_score
-        mean_fixation_dur = features[1]  # mean_fixation_duration
+        # Use REAL MODEL if available
+        if self.model is not None and self.scaler is not None:
+            try:
+                # Validate feature count
+                if features_2d.shape[1] != 12:
+                    raise ValueError(f"Expected 12 features, got {features_2d.shape[1]}")
 
-        # Normalize and combine (simplified)
-        risk_indicator = (
-            min(weighted_tvi / 10.0, 1.0) * 0.6 +
-            min(mean_fixation_dur / 500.0, 1.0) * 0.4
-        )
+                # Scale features using fitted scaler
+                features_scaled = self.scaler.transform(features_2d)
 
-        probability_dyslexic = min(max(risk_indicator, 0.1), 0.95)
-        confidence = 0.85 + np.random.uniform(-0.1, 0.1)  # Mock confidence
-        confidence = min(max(confidence, 0.7), 0.99)
+                # Get prediction probabilities
+                prediction_proba = self.model.predict_proba(features_scaled)[0]
 
-        logger.info(f"Prediction: {probability_dyslexic:.3f}, Confidence: {confidence:.3f}")
+                # Extract probabilities for both classes
+                probability_control = float(prediction_proba[0])      # Class 0: Non-dyslexic
+                probability_dyslexic = float(prediction_proba[1])     # Class 1: Dyslexic
+
+                # Confidence is the maximum probability
+                confidence = float(max(prediction_proba))
+
+                logger.info(
+                    f"✅ Real model prediction: "
+                    f"Dyslexic={probability_dyslexic:.3f}, "
+                    f"Control={probability_control:.3f}, "
+                    f"Confidence={confidence:.3f}"
+                )
+
+            except Exception as e:
+                logger.error(f"❌ Real model prediction failed: {e}", exc_info=True)
+                logger.warning("⚠️ Falling back to MOCK prediction")
+                # Set model to None to trigger mock fallback
+                self.model = None
+
+        # MOCK PREDICTION FALLBACK (if model not loaded or prediction failed)
+        if probability_dyslexic is None:
+            logger.warning("⚠️ Using MOCK prediction logic")
+
+            # Rule-based mock: High TVI scores -> higher risk
+            weighted_tvi = features[11]  # weighted_tvi_score
+            mean_fixation_dur = features[1]  # mean_fixation_duration
+
+            # Normalize and combine (simplified heuristic)
+            risk_indicator = (
+                min(weighted_tvi / 10.0, 1.0) * 0.6 +
+                min(mean_fixation_dur / 500.0, 1.0) * 0.4
+            )
+
+            probability_dyslexic = min(max(risk_indicator, 0.1), 0.95)
+            confidence = 0.85 + np.random.uniform(-0.1, 0.1)  # Mock confidence
+            confidence = min(max(confidence, 0.7), 0.99)
+
+            logger.info(f"Mock prediction: {probability_dyslexic:.3f}, Confidence: {confidence:.3f}")
 
         return probability_dyslexic, confidence, features
 

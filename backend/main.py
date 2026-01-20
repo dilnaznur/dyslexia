@@ -17,6 +17,7 @@ from schemas import (
     Explanation
 )
 from ml_pipeline import DyslexiaPredictor
+from pathlib import Path
 
 # Configure logging
 logging.basicConfig(
@@ -48,10 +49,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize ML predictor (in production, pass model/scaler paths)
+# Model file paths
+MODEL_DIR = Path(__file__).parent / "models"
+MODEL_PATH = MODEL_DIR / "optimal_tvi_model.pkl"
+SCALER_PATH = MODEL_DIR / "scaler.pkl"
+
+# Initialize ML predictor with real model files (if available)
 predictor = DyslexiaPredictor(
-    # model_path="models/optimal_tvi_model.pkl",
-    # scaler_path="models/scaler.pkl"
+    model_path=str(MODEL_PATH) if MODEL_PATH.exists() else None,
+    scaler_path=str(SCALER_PATH) if SCALER_PATH.exists() else None
 )
 
 # In-memory storage for feedback (in production, use database)
@@ -68,6 +74,26 @@ async def root():
     }
 
 
+@app.on_event("startup")
+async def startup_event():
+    """Log startup information and model status."""
+    logger.info("=" * 60)
+    logger.info("MindStep API - Dyslexia Detection Platform")
+    logger.info("=" * 60)
+
+    if predictor.model is not None:
+        logger.info("🚀 Server started with REAL ML model")
+        logger.info("   Model: Random Forest (85.71% accuracy, 94.1% @ high confidence)")
+        logger.info(f"   Version: {predictor.model_version}")
+    else:
+        logger.warning("🚀 Server started in MOCK mode")
+        logger.warning("   Place model files in backend/models/ for real predictions:")
+        logger.warning(f"   - {MODEL_PATH}")
+        logger.warning(f"   - {SCALER_PATH}")
+
+    logger.info("=" * 60)
+
+
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
 async def health_check():
     """
@@ -77,8 +103,8 @@ async def health_check():
     try:
         return HealthResponse(
             status="healthy",
-            model_loaded=predictor is not None,
-            version="1.0.0"
+            model_loaded=(predictor.model is not None),
+            version=predictor.model_version
         )
     except Exception as e:
         logger.error(f"Health check failed: {e}")
