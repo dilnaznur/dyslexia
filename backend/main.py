@@ -8,6 +8,20 @@ import logging
 from typing import Dict
 import uuid
 from datetime import datetime
+import httpx
+import os
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Явно указываем путь к .env
+env_path = Path(__file__).parent / '.env'
+load_dotenv(dotenv_path=env_path)
+
+# Добавьте для отладки
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+print(f"🔑 API Key loaded: {'Yes' if GEMINI_API_KEY else 'NO - CHECK .env FILE'}")
+if GEMINI_API_KEY:
+    print(f"   First 10 chars: {GEMINI_API_KEY[:10]}...")
 
 from schemas import (
     PredictionRequest,
@@ -39,10 +53,10 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",  # Vite default port
-        "http://localhost:3000",  # Common React port
-        "https://*.vercel.app",   # Vercel deployments
-        "*"  # In production, replace with specific domain
+        "http://localhost:5173",  # React dev server
+        "http://127.0.0.1:5173",  # Alternative localhost
+        "https://*.vercel.app",  # Для Vercel
+        "*"  # Временно для тестирования (потом уберём)
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -62,6 +76,10 @@ predictor = DyslexiaPredictor(
 
 # In-memory storage for feedback (in production, use database)
 feedback_store: Dict[str, Dict] = {}
+
+# Gemini API configuration
+
+GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta"
 
 
 @app.get("/", tags=["Root"])
@@ -255,6 +273,134 @@ async def get_statistics():
         "high_confidence_accuracy": 0.941,  # 94.1% at >0.90 confidence
         "uptime": "99.9%"
     }
+
+
+@app.post("/api/gemini", tags=["Gemini AI"])
+async def gemini_proxy(request: dict):
+    """
+    Proxy endpoint for Gemini API requests (vision, chat, analysis).
+    Handles handwriting analysis and AI-powered assessments.
+    """
+    try:
+        # Логируем что получили
+        logger.info(f"Gemini request type: {request.get('type')}")
+        logger.info(f"API Key available: {bool(GEMINI_API_KEY)}")
+        if GEMINI_API_KEY:
+            logger.info(f"API Key first 10 chars: {GEMINI_API_KEY[:10]}...")
+        
+        request_type = request.get("type")
+
+        if request_type == "vision":
+            prompt = request.get("prompt")
+            image_base64 = request.get("imageBase64", "").split(",")[-1]
+
+            body = {
+                "contents": [{
+                    "parts": [
+                        {"text": prompt},
+                        {
+                            "inline_data": {
+                                "mime_type": "image/png",
+                                "data": image_base64
+                            }
+                        }
+                    ]
+                }],
+                "generationConfig": {
+                    "temperature": 0.2,
+                    "topK": 32,
+                    "topP": 0.95,
+                    "maxOutputTokens": 1024
+                }
+            }
+
+        elif request_type == "chat":
+            raw_messages = request.get("messages", [])
+
+            if not raw_messages:
+                raise HTTPException(status_code=400, detail="Messages array is empty")
+
+            messages = []
+            for msg in raw_messages:
+                if "role" in msg and "content" in msg:
+                    # Gemini uses 'user' and 'model', not 'assistant'
+                    role = "model" if msg["role"] == "assistant" else msg["role"]
+                    messages.append({
+                        "role": role,
+                        "parts": [{"text": msg["content"]}]
+                    })
+
+            # Gemini requires last message to be from 'user'
+            if messages and messages[-1]["role"] != "user":
+                logger.warning("Last message is not from user, removing it")
+                messages = messages[:-1]
+
+            if not messages:
+                raise HTTPException(status_code=400, detail="No valid user messages found")
+
+            body = {
+                "contents": messages,
+                "generationConfig": {
+                    "temperature": 0.7,
+                    "topK": 40,
+                    "topP": 0.95,
+                    "maxOutputTokens": 512
+                }
+            }
+
+        elif request_type == "analysis":
+            prompt = request.get("prompt")
+
+            body = {
+                "contents": [{
+                    "parts": [{"text": prompt}]
+                }],
+                "generationConfig": {
+                    "temperature": 0.2,
+                    "topK": 32,
+                    "topP": 0.95,
+                    "maxOutputTokens": 4096
+                }
+            }
+
+        else:
+            raise HTTPException(status_code=400, detail="Invalid request type")
+
+        # Логируем URL который используем
+        api_url = f"{GEMINI_API_BASE}/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+        logger.info(f"Calling Gemini API: {api_url[:80]}...")  # Показываем начало URL
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                api_url,
+                json=body,
+                timeout=30.0
+            )
+        
+        logger.info(f"Gemini response status: {response.status_code}")
+        
+        if response.status_code == 429:
+            logger.warning("Rate limit exceeded, waiting...")
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many requests. Please wait a moment and try again."
+            )
+
+        if response.status_code != 200:
+            error_text = response.text
+            logger.error(f"Gemini API error {response.status_code}: {error_text}")
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=f"Gemini API error: {error_text}"
+            )
+        
+        return response.json()
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Gemini API error: {e}", exc_info=True)  # exc_info=True покажет полный traceback
+        raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
 
 
 @app.exception_handler(Exception)

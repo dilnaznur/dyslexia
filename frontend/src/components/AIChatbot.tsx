@@ -28,10 +28,7 @@ export default function AIChatbot({ onComplete, onSkip }: AIChatbotProps) {
   const [exchangeCount, setExchangeCount] = useState(0);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const conversationHistoryRef = useRef<{ role: 'user' | 'model'; content: string }[]>([
-    { role: 'model', content: getChatbotSystemPrompt() },
-  ]);
-
+  const conversationHistoryRef = useRef<{ role: 'user' | 'model'; content: string }[]>([]);
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -46,22 +43,28 @@ export default function AIChatbot({ onComplete, onSkip }: AIChatbotProps) {
 
   const sendInitialGreeting = async () => {
     setIsLoading(true);
-
+  
     try {
-      const greeting = await sendChatMessage(conversationHistoryRef.current);
-
+      // Добавляем начальное сообщение от пользователя
+      const initialHistory = [
+        { role: 'user', content: 'Hi! I\'m ready to start.' }
+      ];
+      
+      const greeting = await sendChatMessage(initialHistory);
+  
       const greetingMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
         content: greeting,
         timestamp: Date.now(),
       };
-
-      conversationHistoryRef.current.push({
-        role: 'model',
-        content: greeting,
-      });
-
+  
+      // Сохраняем в историю (без системного промпта)
+      conversationHistoryRef.current = [
+        { role: 'user', content: 'Hi! I\'m ready to start.' },
+        { role: 'model', content: greeting }
+      ];
+  
       setMessages([greetingMessage]);
     } catch (error) {
       console.error('Failed to get initial greeting:', error);

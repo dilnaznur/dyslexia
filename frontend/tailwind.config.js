@@ -43,6 +43,9 @@ export default {
       borderRadius: {
         'glass': '20px',
       },
+      backdropSaturate: {
+        180: '1.8', // 180% насыщенности
+      },
       backdropBlur: {
         'glass': '10px',
       },

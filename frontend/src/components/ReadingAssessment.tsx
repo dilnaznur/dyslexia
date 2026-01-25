@@ -49,13 +49,23 @@ export default function ReadingAssessment({
 
   const gazePointsRef = useRef<GazePoint[]>([]);
   const startTimeRef = useRef<number>(0);
+  const isMountedRef = useRef(true);
 
-  // Cleanup on unmount
+  // Обновите useEffect для очистки
   useEffect(() => {
+    isMountedRef.current = true;
+    
+    initializeWebGazer().catch((err) => console.error(err));
+  
     return () => {
-      cleanupWebGazer();
+      isMountedRef.current = false;
+      // Даем небольшую задержку для корректной очистки
+      setTimeout(() => {
+        cleanupWebGazer();
+      }, 100);
     };
   }, []);
+
 
   // Handle calibration
   useEffect(() => {
@@ -121,20 +131,19 @@ export default function ReadingAssessment({
 
   const handleReadingComplete = () => {
     stopGazeTracking();
-
+  
     const endTime = Date.now();
-    const duration = (endTime - startTimeRef.current) / 1000; // seconds
+    const duration = (endTime - startTimeRef.current) / 1000;
     const wordCount = READING_TEXT.split(/\s+/).length;
-
-    // Calculate metrics
+  
     const calculatedMetrics = calculateReadingMetrics(
       gazePointsRef.current,
       wordCount,
       duration
     );
-
+  
     const heatmapData = generateHeatmapData(gazePointsRef.current);
-
+  
     const metrics: ReadingMetrics = {
       gaze_points: gazePointsRef.current,
       text_length: wordCount,
@@ -145,9 +154,14 @@ export default function ReadingAssessment({
       regression_index: calculatedMetrics.regression_index,
       heatmap_data: heatmapData,
     };
-
+  
     setPhase('complete');
-    onComplete(metrics);
+    
+    // Очищаем WebGazer перед переходом
+    setTimeout(() => {
+      cleanupWebGazer();
+      onComplete(metrics);
+    }, 500);
   };
 
   const currentCalibrationPoint =

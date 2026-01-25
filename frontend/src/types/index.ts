@@ -48,7 +48,7 @@ export interface Stroke {
 }
 
 export interface WritingAnalysis {
-  gemini_response: GeminiWritingResult;
+  gemini_response: string;
   stroke_count: number;
   avg_stroke_speed: number;
   pressure_variance: number;

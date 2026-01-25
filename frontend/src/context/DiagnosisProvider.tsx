@@ -2,7 +2,7 @@
  * Diagnosis Context Provider
  * Manages global state for multi-modal dyslexia assessment
  */
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import {
   DiagnosisState,
   ReadingMetrics,
@@ -188,74 +188,106 @@ export function DiagnosisProvider({ children }: DiagnosisProviderProps) {
   const calculateFinalScore = () => {
     const { backend_prediction, writing_data, chatbot_data } = state;
 
+    console.log('=== Starting calculateFinalScore ===');
+    console.log('backend_prediction:', backend_prediction);
+    console.log('writing_data:', writing_data);
+    console.log('chatbot_data:', chatbot_data);
+
     if (!backend_prediction) {
+      console.error('No backend prediction available');
       dispatch({ type: 'SET_ERROR', payload: 'Backend prediction not available' });
       return;
     }
 
-    // Weighted fusion algorithm
-    const weights = {
-      backend_ml: 0.45,
-      gemini_writing: 0.25,
-      gemini_chatbot: 0.20,
-      eye_tracking: 0.10,
-    };
+    try {
+      // Weighted fusion algorithm
+      const weights = {
+        backend_ml: 0.45,
+        gemini_writing: 0.25,
+        gemini_chatbot: 0.20,
+        eye_tracking: 0.10,
+      };
 
-    // Convert writing risk to numeric (0-100)
-    const writingRiskMap = { Low: 20, Moderate: 50, High: 80 };
-    const writingRiskNumeric = writing_data
-      ? writingRiskMap[writing_data.gemini_response.overall_risk]
-      : 50;
+      // Convert writing risk to numeric (0-100)
+      // Since gemini_response is a string (not structured object), use default low-moderate risk
+      const writingRiskNumeric = writing_data ? 30 : 50;
 
-    // Convert chatbot risk to numeric (0-100)
-    const chatbotRiskMap = { Low: 20, Moderate: 50, High: 80 };
-    const chatbotRiskNumeric = chatbot_data
-      ? chatbotRiskMap[chatbot_data.overall_cognitive_risk]
-      : 50;
+      // Convert chatbot risk to numeric (0-100)
+      const chatbotRiskMap: { [key: string]: number } = { Low: 20, Moderate: 50, High: 80 };
+      const chatbotRiskNumeric = chatbot_data
+        ? chatbotRiskMap[chatbot_data.overall_cognitive_risk]
+        : 50;
 
-    // Eye tracking risk (based on regression index and fixation duration)
-    const eyeTrackingRisk = state.reading_data
-      ? calculateEyeTrackingRisk(state.reading_data)
-      : 50;
+      // Eye tracking risk (based on regression index and fixation duration)
+      const eyeTrackingRisk = state.reading_data
+        ? calculateEyeTrackingRisk(state.reading_data)
+        : 50;
 
-    // Calculate weighted final score
-    const finalScore =
-      weights.backend_ml * backend_prediction.risk_score +
-      weights.gemini_writing * writingRiskNumeric +
-      weights.gemini_chatbot * chatbotRiskNumeric +
-      weights.eye_tracking * eyeTrackingRisk;
+      console.log('Risk components:', {
+        backend_ml: backend_prediction.risk_score,
+        writing: writingRiskNumeric,
+        chatbot: chatbotRiskNumeric,
+        eye_tracking: eyeTrackingRisk,
+      });
 
-    // Classify based on final score
-    let classification: 'Low Risk' | 'Moderate Risk' | 'High Risk';
-    if (finalScore < 40) {
-      classification = 'Low Risk';
-    } else if (finalScore < 70) {
-      classification = 'Moderate Risk';
-    } else {
-      classification = 'High Risk';
+      // Calculate weighted final score
+      const finalScore =
+        weights.backend_ml * backend_prediction.risk_score +
+        weights.gemini_writing * writingRiskNumeric +
+        weights.gemini_chatbot * chatbotRiskNumeric +
+        weights.eye_tracking * eyeTrackingRisk;
+
+      console.log('Final score calculated:', finalScore);
+
+      // Classify based on final score
+      let classification: 'Low Risk' | 'Moderate Risk' | 'High Risk';
+      if (finalScore < 40) {
+        classification = 'Low Risk';
+      } else if (finalScore < 70) {
+        classification = 'Moderate Risk';
+      } else {
+        classification = 'High Risk';
+      }
+
+      console.log('Classification:', classification);
+
+      // Generate combined explanation
+      const explanation = generateCombinedExplanation(
+        backend_prediction,
+        writing_data,
+        chatbot_data,
+        state.reading_data
+      );
+
+      console.log('Explanation generated:', explanation);
+
+      dispatch({
+        type: 'SET_FINAL_SCORE',
+        payload: {
+          score: finalScore,
+          classification,
+          explanation,
+        },
+      });
+
+      console.log('=== Final score dispatched successfully ===');
+    } catch (error) {
+      console.error('Error in calculateFinalScore:', error);
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to calculate final score' });
     }
-
-    // Generate combined explanation
-    const explanation = generateCombinedExplanation(
-      backend_prediction,
-      writing_data,
-      chatbot_data,
-      state.reading_data
-    );
-
-    dispatch({
-      type: 'SET_FINAL_SCORE',
-      payload: {
-        score: finalScore,
-        classification,
-        explanation,
-      },
-    });
   };
 
   const reset = () => {
     dispatch({ type: 'RESET' });
   };
+
+  // Auto-calculate final score when backend prediction is received
+  useEffect(() => {
+    if (state.backend_prediction && !state.final_score) {
+      console.log('Auto-calculating final score...');
+      calculateFinalScore();
+    }
+  }, [state.backend_prediction]);
 
   const value: DiagnosisContextType = {
     state,
@@ -321,19 +353,29 @@ function generateCombinedExplanation(
   }
 
   // Writing indicators
-  if (writingData) {
-    if (writingData.gemini_response.mirror_writing_detected) {
-      const indicator = 'Mirror writing patterns detected';
+  // Since gemini_response is a string (not structured object), extract simple indicator
+  if (writingData && writingData.gemini_response) {
+    const response = writingData.gemini_response.toLowerCase();
+    
+    if (response.includes('reversal') || response.includes('mirror')) {
+      const indicator = 'Letter reversal patterns noted in handwriting';
       primaryFactors.push(indicator);
       writingIndicators.push(indicator);
     }
-    if (writingData.gemini_response.letter_spacing_irregular) {
+    
+    if (response.includes('spacing') || response.includes('inconsistent')) {
       const indicator = 'Irregular letter spacing observed';
       writingIndicators.push(indicator);
     }
-    if (writingData.gemini_response.tremor_detected) {
-      const indicator = `Tremor detected (${writingData.gemini_response.tremor_severity})`;
+    
+    if (response.includes('tremor') || response.includes('shaky')) {
+      const indicator = 'Hand tremor detected in writing';
       writingIndicators.push(indicator);
+    }
+    
+    // If no specific issues found, add general indicator
+    if (writingIndicators.length === 0) {
+      writingIndicators.push('Handwriting assessment completed - no significant concerns');
     }
   }
 
@@ -351,6 +393,11 @@ function generateCombinedExplanation(
     if (chatbotData.comprehension_score < 5) {
       const indicator = 'Comprehension difficulties noted';
       behavioralIndicators.push(indicator);
+    }
+    
+    // If all scores are good, add positive indicator
+    if (behavioralIndicators.length === 0) {
+      behavioralIndicators.push('Good cognitive engagement and comprehension');
     }
   }
 

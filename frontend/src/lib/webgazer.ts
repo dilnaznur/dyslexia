@@ -68,12 +68,82 @@ export function stopGazeTracking(): void {
 /**
  * Cleanup and end WebGazer session
  */
-export function cleanupWebGazer(): void {
-  if (window.webgazer) {
-    window.webgazer.end();
-    window.webgazer.clearData();
+// webgazer.ts
+/**
+ * Cleanup and end WebGazer session
+ */
+export function cleanupWebGazer() {
+  try {
+    if (window.webgazer) {
+      // Сначала останавливаем отслеживание
+      window.webgazer.pause();
+      window.webgazer.clearGazeListener();
+      
+      // Скрываем видео и оверлеи
+      window.webgazer.showVideo(false);
+      window.webgazer.showFaceOverlay(false);
+      window.webgazer.showFaceFeedbackBox(false);
+      
+      // Пытаемся безопасно завершить WebGazer
+      try {
+        if (typeof window.webgazer.end === 'function') {
+          window.webgazer.end();
+        }
+      } catch (endError) {
+        console.warn('WebGazer.end() failed, continuing cleanup:', endError);
+      }
+    }
+
+    // Удаляем ВСЕ video элементы на странице, созданные WebGazer
+    const allVideos = document.querySelectorAll('video');
+    allVideos.forEach((video) => {
+      // Проверяем, что это видео от WebGazer (обычно имеет определенные атрибуты)
+      if (video.id?.includes('webgazer') || 
+          video.className?.includes('webgazer') ||
+          !video.id) { // WebGazer иногда создает видео без ID
+        try {
+          // Останавливаем медиа-поток
+          const stream = video.srcObject as MediaStream;
+          if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+          }
+          video.srcObject = null;
+          
+          // Удаляем элемент
+          if (video.parentNode) {
+            video.parentNode.removeChild(video);
+            console.log('Removed video element');
+          }
+        } catch (err) {
+          console.warn('Error removing video:', err);
+        }
+      }
+    });
+
+    // Удаляем все canvas элементы WebGazer
+    const allCanvas = document.querySelectorAll('canvas');
+    allCanvas.forEach((canvas) => {
+      if (canvas.id?.includes('webgazer') || canvas.className?.includes('webgazer')) {
+        try {
+          if (canvas.parentNode) {
+            canvas.parentNode.removeChild(canvas);
+            console.log('Removed canvas element');
+          }
+        } catch (err) {
+          console.warn('Error removing canvas:', err);
+        }
+      }
+    });
+
+    console.log('WebGazer cleanup completed');
+  } catch (err) {
+    console.error('Error during WebGazer cleanup:', err);
   }
 }
+
+
+
+
 
 /**
  * Calculate reading metrics from gaze points

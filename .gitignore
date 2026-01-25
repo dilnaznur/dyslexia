@@ -23,20 +23,20 @@ wheels/
 .installed.cfg
 *.egg
 
-# Model files (too large, may contain sensitive data)
-models/*.pkl
-models/*.joblib
+# Model files (игнорируем ТОЛЬКО большие модели)
+# НЕ игнорируем маленькие модели (<1MB)
 models/*.h5
 models/*.pt
 models/*.pth
+models/*.joblib
 
-# Keep README and .gitkeep
-!models/README.md
-!models/.gitkeep
+# Если модель больше 100MB, добавьте её в Git LFS
+# git lfs track "*.pkl"
 
 # Environment variables
 .env
 .env.local
+.env.production
 
 # IDE
 .vscode/
@@ -57,3 +57,6 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Node modules (для фронтенда)
+node_modules/

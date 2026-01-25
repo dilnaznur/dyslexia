@@ -58,8 +58,7 @@ function AppContent() {
       // Wait a bit for dramatic effect
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      // Calculate final score with fusion algorithm
-      calculateFinalScore();
+      
 
       // Navigate to dashboard
       setCurrentStep('dashboard');
