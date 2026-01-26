@@ -12,10 +12,16 @@ export async function initializeWebGazer(): Promise<void> {
       throw new Error('WebGazer not loaded');
     }
 
-    // Используйте clmtracker вместо TFFacemesh (не требует дополнительных файлов)
+    // Настройка путей MediaPipe из CDN
+    if ((window as any).webgazer && (window as any).webgazer.util) {
+      (window as any).webgazer.util.params.locateFile = (file: string) => {
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+      };
+    }
+
     window.webgazer
       .setRegression('ridge')
-      .setTracker('clmtracker') // ← Изменено с TFFacemesh на clmtracker
+      .setTracker('TFFacemesh') // Возвращаем TFFacemesh
       .showPredictionPoints(false)
       .showVideo(true)
       .showFaceOverlay(false)
@@ -23,9 +29,7 @@ export async function initializeWebGazer(): Promise<void> {
       .applyKalmanFilter(true);
 
     await window.webgazer.begin();
-    
-    // Даём время на инициализацию
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 3000)); // Увеличили до 3 сек
 
     console.log('WebGazer initialized successfully');
   } catch (error) {
