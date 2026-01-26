@@ -44,10 +44,11 @@ export default function ReadingAssessment({
   const [calibrationIndex, setCalibrationIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  
   const gazePointsRef = useRef<GazePoint[]>([]);
   const startTimeRef = useRef<number>(0);
   const isWebGazerInitialized = useRef(false);
-  const hasCompletedRef = useRef(false); // Новый флаг
+  const hasCompletedRef = useRef(false);
 
   // Cleanup ТОЛЬКО при размонтировании компонента
   useEffect(() => {
@@ -94,7 +95,7 @@ export default function ReadingAssessment({
 
       return () => clearInterval(interval);
     }
-  }, [phase, startTimeRef.current]); // Добавили startTimeRef.current в зависимости
+  }, [phase, startTimeRef.current]);
 
   const handleStart = async () => {
     try {
