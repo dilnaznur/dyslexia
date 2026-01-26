@@ -37,13 +37,6 @@ interface ReadingAssessmentProps {
   onSkip?: () => void;
 }
 
-// WebGazer type extension
-declare global {
-  interface Window {
-    webgazer?: any;
-  }
-}
-
 // Constants
 const READING_TEXT = `Once upon a time, there was a clever fox who lived in a beautiful forest. The fox loved to explore and find new adventures every day. One sunny morning, the fox discovered a sparkling stream with crystal clear water. Many colorful fish swam happily in the stream. The fox made friends with a wise old owl who lived in a tall oak tree. Together, they explored the magical forest and helped other animals. They found hidden treasures and solved interesting puzzles. The fox learned that friendship and kindness are the most valuable treasures of all.`;
 
