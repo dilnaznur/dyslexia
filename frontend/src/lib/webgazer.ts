@@ -12,29 +12,27 @@ export async function initializeWebGazer(): Promise<void> {
       throw new Error('WebGazer not loaded');
     }
 
-    // Настройка путей MediaPipe из CDN
-    if ((window as any).webgazer && (window as any).webgazer.util) {
-      (window as any).webgazer.util.params.locateFile = (file: string) => {
-        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
-      };
-    }
-
-    window.webgazer
+    // Простая инициализация
+    await window.webgazer
       .setRegression('ridge')
-      .setTracker('TFFacemesh') // Возвращаем TFFacemesh
+      .setTracker('TFFacemesh')
+      .begin();
+
+    // Настраиваем UI после запуска
+    window.webgazer
       .showPredictionPoints(false)
       .showVideo(true)
       .showFaceOverlay(false)
       .showFaceFeedbackBox(false)
       .applyKalmanFilter(true);
 
-    await window.webgazer.begin();
-    await new Promise(resolve => setTimeout(resolve, 3000)); // Увеличили до 3 сек
+    // Ждём инициализации
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     console.log('WebGazer initialized successfully');
   } catch (error) {
     console.error('WebGazer initialization error:', error);
-    throw error;
+    throw new Error('Failed to initialize eye tracking. Please reload and allow camera access.');
   }
 }
 
