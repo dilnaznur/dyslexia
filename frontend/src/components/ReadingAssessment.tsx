@@ -38,7 +38,7 @@ export default function ReadingAssessment({
   onComplete,
   onSkip,
 }: ReadingAssessmentProps) {
-  const [phase, setPhase] = useState
+  const [phase, setPhase] = useState<
     'intro' | 'calibration' | 'reading' | 'complete'
   >('intro');
   const [calibrationIndex, setCalibrationIndex] = useState(0);
