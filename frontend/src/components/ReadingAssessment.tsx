@@ -57,29 +57,15 @@ async function initializeWebGazer(): Promise<void> {
       throw new Error('WebGazer not loaded');
     }
 
-    // Request camera with timeout and specific constraints
     console.log('📹 Requesting camera permission...');
-    const cameraPromise = navigator.mediaDevices.getUserMedia({ 
+    const stream = await navigator.mediaDevices.getUserMedia({ 
       video: {
         facingMode: 'user',
         width: { ideal: 640 },
         height: { ideal: 480 }
       } 
     });
-    
-    const timeoutPromise = new Promise<MediaStream>((_, reject) => 
-      setTimeout(() => reject(new Error('Camera access timeout - please check your camera and permissions')), 10000)
-    );
-    
-    const stream = await Promise.race([cameraPromise, timeoutPromise]);
     console.log('✅ Camera permission granted');
-    
-    // Verify camera is actually working
-    const videoTrack = stream.getVideoTracks()[0];
-    if (!videoTrack || videoTrack.readyState !== 'live') {
-      throw new Error('Camera not ready - please check if another app is using it');
-    }
-    
     stream.getTracks().forEach(track => track.stop());
 
     console.log('⚙️ Configuring WebGazer...');
@@ -92,56 +78,23 @@ async function initializeWebGazer(): Promise<void> {
       .showFaceFeedbackBox(false)
       .begin();
 
-    console.log('⏳ Waiting for WebGazer warmup...');
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    // WebGazer needs 5-7 seconds to warm up properly
+    console.log('⏳ Waiting for WebGazer to warm up (this takes about 7 seconds)...');
+    await new Promise(resolve => setTimeout(resolve, 7000));
     
-    // Verify WebGazer is actually tracking by checking for gaze predictions
-    let gazeCheckCount = 0;
-    const verifyTracking = () => new Promise<void>((resolve, reject) => {
-      let hasReceivedGaze = false;
-      
-      const testListener = (data: any) => {
-        if (data && data.x && data.y) {
-          hasReceivedGaze = true;
-        }
-      };
-      
-      window.webgazer?.setGazeListener(testListener);
-      
-      const checkInterval = setInterval(() => {
-        gazeCheckCount++;
-        
-        if (hasReceivedGaze) {
-          clearInterval(checkInterval);
-          window.webgazer?.setGazeListener(() => {}); // Clear test listener
-          resolve();
-        }
-        
-        if (gazeCheckCount > 15) {
-          clearInterval(checkInterval);
-          window.webgazer?.setGazeListener(() => {}); // Clear test listener
-          reject(new Error('WebGazer failed to start tracking - no gaze data received'));
-        }
-      }, 200);
-    });
-    
-    await verifyTracking();
     console.log('✅ WebGazer initialized successfully');
   } catch (error) {
     console.error('❌ WebGazer initialization error:', error);
     
-    // Provide specific error messages
     if (error instanceof Error) {
-      if (error.message.includes('timeout') || error.message.includes('Timeout')) {
-        throw new Error('Camera is taking too long to start. Please check:\n• Camera is not being used by another app\n• Browser has camera permissions\n• Camera is properly connected');
-      } else if (error.message.includes('Permission denied') || error.name === 'NotAllowedError') {
+      if (error.message.includes('Permission denied') || error.name === 'NotAllowedError') {
         throw new Error('Camera permission denied. Please allow camera access and try again.');
       } else if (error.message.includes('not found') || error.name === 'NotFoundError') {
         throw new Error('No camera found. Please connect a camera and try again.');
       }
     }
     
-    throw new Error('Failed to initialize eye tracking. Please check your camera and permissions.');
+    throw new Error('Failed to initialize camera. Please check your camera and try again.');
   }
 }
 
