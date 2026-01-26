@@ -72,12 +72,15 @@ export function stopGazeTracking(): void {
 /**
  * Cleanup and end WebGazer session
  */
+/**
+ * Cleanup and end WebGazer session
+ */
 export function cleanupWebGazer() {
   try {
     if (window.webgazer) {
-      // Сначала останавливаем отслеживание
+      // Останавливаем отслеживание
       window.webgazer.pause();
-      window.webgazer.clearGazeListener();
+      window.webgazer.setGazeListener(() => {}); // ← Вместо clearGazeListener
       
       // Скрываем видео и оверлеи
       window.webgazer.showVideo(false);
@@ -97,22 +100,18 @@ export function cleanupWebGazer() {
     // Удаляем ВСЕ video элементы на странице, созданные WebGazer
     const allVideos = document.querySelectorAll('video');
     allVideos.forEach((video) => {
-      // Проверяем, что это видео от WebGazer (обычно имеет определенные атрибуты)
       if (video.id?.includes('webgazer') || 
           video.className?.includes('webgazer') ||
-          !video.id) { // WebGazer иногда создает видео без ID
+          !video.id) {
         try {
-          // Останавливаем медиа-поток
           const stream = video.srcObject as MediaStream;
           if (stream) {
             stream.getTracks().forEach(track => track.stop());
           }
           video.srcObject = null;
           
-          // Удаляем элемент
           if (video.parentNode) {
             video.parentNode.removeChild(video);
-            console.log('Removed video element');
           }
         } catch (err) {
           console.warn('Error removing video:', err);
@@ -127,7 +126,6 @@ export function cleanupWebGazer() {
         try {
           if (canvas.parentNode) {
             canvas.parentNode.removeChild(canvas);
-            console.log('Removed canvas element');
           }
         } catch (err) {
           console.warn('Error removing canvas:', err);
