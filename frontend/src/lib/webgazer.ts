@@ -1,7 +1,7 @@
 /**
  * WebGazer.js utilities for eye-tracking
  */
-import * as webgazer from 'webgazer';
+
 import { GazePoint, Fixation } from '@/types';
 
 
@@ -10,21 +10,21 @@ import { GazePoint, Fixation } from '@/types';
  */
 export async function initializeWebGazer(): Promise<void> {
   try {
-    // Используем напрямую импортированный webgazer, не window.webgazer
-    await webgazer
+    if (!window.webgazer) {
+      throw new Error('WebGazer not loaded');
+    }
+
+    await window.webgazer
       .setRegression('ridge')
       .setTracker('TFFacemesh')
       .begin();
 
-    webgazer
+    window.webgazer
       .showPredictionPoints(false)
       .showVideo(true)
       .showFaceOverlay(false)
       .showFaceFeedbackBox(false)
       .applyKalmanFilter(true);
-
-    // Сохраняем в window для других функций
-    (window as any).webgazer = webgazer;
 
     await new Promise(resolve => setTimeout(resolve, 2000));
     console.log('WebGazer initialized');
