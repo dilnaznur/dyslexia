@@ -1,8 +1,40 @@
+/**
+ * Reading Assessment with Eye-Tracking Module
+ * Uses WebGazer.js to track eye movements during reading
+ */
+import { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { Eye, CheckCircle, AlertCircle } from 'lucide-react';
+import {
+  initializeWebGazer,
+  startGazeTracking,
+  stopGazeTracking,
+  cleanupWebGazer,
+  calculateReadingMetrics,
+  generateHeatmapData,
+} from '@/lib/webgazer';
+import { GazePoint, ReadingMetrics } from '@/types';
+
+interface ReadingAssessmentProps {
+  onComplete: (metrics: ReadingMetrics) => void;
+  onSkip?: () => void;
+}
+
+const READING_TEXT = `Once upon a time, there was a clever fox who lived in a beautiful forest. The fox loved to explore and find new adventures every day. One sunny morning, the fox discovered a sparkling stream with crystal clear water. Many colorful fish swam happily in the stream. The fox made friends with a wise old owl who lived in a tall oak tree. Together, they explored the magical forest and helped other animals. They found hidden treasures and solved interesting puzzles. The fox learned that friendship and kindness are the most valuable treasures of all.`;
+
+const CALIBRATION_POINTS = [
+  { x: 10, y: 10 },
+  { x: 90, y: 10 },
+  { x: 50, y: 50 },
+  { x: 10, y: 90 },
+  { x: 90, y: 90 },
+];
+
 export default function ReadingAssessment({
   onComplete,
   onSkip,
 }: ReadingAssessmentProps) {
-  const [phase, setPhase] = useState
+  const [phase, setPhase] = useState<
     'intro' | 'calibration' | 'reading' | 'complete'
   >('intro');
   const [calibrationIndex, setCalibrationIndex] = useState(0);
