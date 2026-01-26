@@ -8,9 +8,25 @@ import { GazePoint, Fixation } from '@/types';
  */
 export async function initializeWebGazer(): Promise<void> {
   try {
+    // Ждём пока WebGazer загрузится
     if (!window.webgazer) {
-      throw new Error('WebGazer not loaded');
+      console.log('Waiting for WebGazer to load...');
+      await new Promise((resolve, reject) => {
+        let attempts = 0;
+        const checkInterval = setInterval(() => {
+          attempts++;
+          if (window.webgazer) {
+            clearInterval(checkInterval);
+            resolve(true);
+          } else if (attempts > 50) { // 5 секунд максимум
+            clearInterval(checkInterval);
+            reject(new Error('WebGazer failed to load after 5 seconds'));
+          }
+        }, 100);
+      });
     }
+
+    console.log('WebGazer loaded, initializing...');
 
     // Простая инициализация
     await window.webgazer
