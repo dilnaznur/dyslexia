@@ -55,7 +55,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",  # React dev server
         "http://127.0.0.1:5173",
-        "https://mindstep-dyslexia-prime.vercel.app"  # Alternative localhost
+        "https://mindstep-dyslexia-prime.vercel.app",  # Alternative localhost
         "https://*.vercel.app"  # Для Vercel
           # Временно для тестирования (потом уберём)
     ],
