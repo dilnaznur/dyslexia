@@ -2,7 +2,7 @@
  * Diagnosis Context Provider
  * Manages global state for multi-modal dyslexia assessment
  */
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import {
   DiagnosisState,
   ReadingMetrics,
@@ -255,8 +255,7 @@ export function DiagnosisProvider({ children }: DiagnosisProviderProps) {
       const explanation = generateCombinedExplanation(
         backend_prediction,
         writing_data,
-        chatbot_data,
-        state.reading_data
+        chatbot_data
       );
 
       console.log('Explanation generated:', explanation);
@@ -338,8 +337,7 @@ function calculateEyeTrackingRisk(readingData: ReadingMetrics): number {
 function generateCombinedExplanation(
   backendPrediction: BackendPrediction,
   writingData: WritingAnalysis | null,
-  chatbotData: ChatbotAnalysis | null,
-  readingData: ReadingMetrics | null
+  chatbotData: ChatbotAnalysis | null
 ): CombinedExplanation {
   const primaryFactors: string[] = [];
   const readingIndicators: string[] = [];

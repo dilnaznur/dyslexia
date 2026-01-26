@@ -22,7 +22,6 @@ function AppContent() {
     setChatbotData,
     processBackendPrediction,
     calculateFinalScore,
-    state,
   } = useDiagnosis();
 
   // Handle reading assessment completion

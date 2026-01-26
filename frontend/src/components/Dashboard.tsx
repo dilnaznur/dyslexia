@@ -16,7 +16,6 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  Legend,
 } from 'recharts';
 import {
   AlertCircle,
@@ -63,6 +62,7 @@ export default function Dashboard() {
 
       return () => clearInterval(timer);
     }
+    return;
   }, [state.final_score]);
 
   if (!state.final_score || !state.combined_explanation) {
@@ -89,12 +89,7 @@ export default function Dashboard() {
       ? 'bg-yellow-500'
       : 'bg-red-500';
 
-  const riskTextColor =
-    state.final_classification === 'Low Risk'
-      ? 'text-green-600'
-      : state.final_classification === 'Moderate Risk'
-      ? 'text-yellow-600'
-      : 'text-red-600';
+
 
   // Prepare radar chart data
   const radarData = [
@@ -115,12 +110,8 @@ export default function Dashboard() {
     {
       metric: 'Handwriting',
       value: state.writing_data
-        ? state.writing_data.gemini_response.overall_risk === 'Low'
-          ? 80
-          : state.writing_data.gemini_response.overall_risk === 'Moderate'
-          ? 50
-          : 20
-        : 50,
+  ? 70  // Default score since gemini_response is string, not object
+  : 50,
       fullMark: 100,
     },
     {

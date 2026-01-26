@@ -8,7 +8,6 @@ import { Bot, Send, Loader } from 'lucide-react';
 import {
   sendChatMessage,
   analyzeChatbotConversation,
-  getChatbotSystemPrompt,
 } from '@/lib/gemini';
 import { ChatMessage, ChatbotAnalysis } from '@/types';
 
@@ -18,7 +17,6 @@ interface AIChatbotProps {
 }
 
 const MIN_EXCHANGES = 5;
-const MAX_EXCHANGES = 7;
 
 export default function AIChatbot({ onComplete, onSkip }: AIChatbotProps) {
   const [phase, setPhase] = useState<'intro' | 'chatting' | 'analyzing' | 'complete'>('intro');
@@ -46,8 +44,8 @@ export default function AIChatbot({ onComplete, onSkip }: AIChatbotProps) {
   
     try {
       // Добавляем начальное сообщение от пользователя
-      const initialHistory = [
-        { role: 'user', content: 'Hi! I\'m ready to start.' }
+      const initialHistory: { role: 'user' | 'model'; content: string }[] = [
+        { role: 'user' as const, content: 'Hi! I\'m ready to start.' }  // ← as const
       ];
       
       const greeting = await sendChatMessage(initialHistory);
