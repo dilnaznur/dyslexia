@@ -58,12 +58,12 @@ async function initializeWebGazer(): Promise<void> {
     }
 
     console.log('⚙️ Configuring WebGazer...');
+    const webgazerAny = window.webgazer as any;
 
-    if (window.webgazer.params) {
-      window.webgazer.params.faceMeshConfig = {
+    if (webgazerAny.params) {
+      webgazerAny.params.faceMeshConfig = {
         locateFile: (file: string) => {
           console.log('📦 Loading MediaPipe file:', file);
-          // Используй CDN вместо локальных файлов
           return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
         }
       };
