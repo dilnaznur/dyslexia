@@ -95,18 +95,32 @@ async function initializeWebGazer(): Promise<void> {
     console.log('⏳ Waiting for WebGazer warmup...');
     await new Promise(resolve => setTimeout(resolve, 3000));
     
-    // Verify WebGazer is actually tracking
+    // Verify WebGazer is actually tracking by checking for gaze predictions
     let gazeCheckCount = 0;
     const verifyTracking = () => new Promise<void>((resolve, reject) => {
+      let hasReceivedGaze = false;
+      
+      const testListener = (data: any) => {
+        if (data && data.x && data.y) {
+          hasReceivedGaze = true;
+        }
+      };
+      
+      window.webgazer?.setGazeListener(testListener);
+      
       const checkInterval = setInterval(() => {
-        if (window.webgazer && window.webgazer.isReady()) {
+        gazeCheckCount++;
+        
+        if (hasReceivedGaze) {
           clearInterval(checkInterval);
+          window.webgazer?.setGazeListener(() => {}); // Clear test listener
           resolve();
         }
-        gazeCheckCount++;
-        if (gazeCheckCount > 20) {
+        
+        if (gazeCheckCount > 15) {
           clearInterval(checkInterval);
-          reject(new Error('WebGazer failed to start tracking'));
+          window.webgazer?.setGazeListener(() => {}); // Clear test listener
+          reject(new Error('WebGazer failed to start tracking - no gaze data received'));
         }
       }, 200);
     });
