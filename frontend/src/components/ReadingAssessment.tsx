@@ -38,34 +38,30 @@ export default function ReadingAssessment({
   onComplete,
   onSkip,
 }: ReadingAssessmentProps) {
-  const [phase, setPhase] = useState<
+  const [phase, setPhase] = useState
     'intro' | 'calibration' | 'reading' | 'complete'
   >('intro');
   const [calibrationIndex, setCalibrationIndex] = useState(0);
-  const [gazePoints, setGazePoints] = useState<GazePoint[]>([]);
-  const [readingStartTime, setReadingStartTime] = useState<number>(0);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const gazePointsRef = useRef<GazePoint[]>([]);
   const startTimeRef = useRef<number>(0);
-  const isMountedRef = useRef(true);
+  const isWebGazerInitialized = useRef(false);
 
-  // Обновите useEffect для очистки
+  // Initialize WebGazer only once - NOT on mount
+  // We'll initialize it when user clicks "Start Assessment"
+
+  // Cleanup on unmount
   useEffect(() => {
-    isMountedRef.current = true;
-    
-    initializeWebGazer().catch((err) => console.error(err));
-  
     return () => {
-      isMountedRef.current = false;
-      // Даем небольшую задержку для корректной очистки
-      setTimeout(() => {
+      console.log('🔄 Component unmounting, cleaning up WebGazer...');
+      if (isWebGazerInitialized.current) {
         cleanupWebGazer();
-      }, 100);
+        isWebGazerInitialized.current = false;
+      }
     };
   }, []);
-
 
   // Handle calibration
   useEffect(() => {
@@ -87,9 +83,9 @@ export default function ReadingAssessment({
 
   // Update progress during reading
   useEffect(() => {
-    if (phase === 'reading' && readingStartTime > 0) {
+    if (phase === 'reading' && startTimeRef.current > 0) {
       const interval = setInterval(() => {
-        const elapsed = Date.now() - readingStartTime;
+        const elapsed = Date.now() - startTimeRef.current;
         const expectedDuration = 120000; // 2 minutes
         const newProgress = Math.min((elapsed / expectedDuration) * 100, 100);
         setProgress(newProgress);
@@ -102,12 +98,17 @@ export default function ReadingAssessment({
 
       return () => clearInterval(interval);
     }
-  }, [phase, readingStartTime]);
+  }, [phase]);
 
   const handleStart = async () => {
     try {
       setError(null);
+      console.log('🚀 User clicked Start Assessment');
+      
+      // Initialize WebGazer только здесь
       await initializeWebGazer();
+      isWebGazerInitialized.current = true;
+      
       setPhase('calibration');
     } catch (err) {
       setError(
@@ -118,8 +119,8 @@ export default function ReadingAssessment({
   };
 
   const startReading = () => {
+    console.log('📖 Starting reading phase');
     const startTime = Date.now();
-    setReadingStartTime(startTime);
     startTimeRef.current = startTime;
     gazePointsRef.current = [];
 
@@ -130,20 +131,23 @@ export default function ReadingAssessment({
   };
 
   const handleReadingComplete = () => {
+    console.log('✅ Reading complete, processing results...');
     stopGazeTracking();
-  
+
     const endTime = Date.now();
     const duration = (endTime - startTimeRef.current) / 1000;
     const wordCount = READING_TEXT.split(/\s+/).length;
-  
+
+    console.log(`📊 Collected ${gazePointsRef.current.length} gaze points over ${duration}s`);
+
     const calculatedMetrics = calculateReadingMetrics(
       gazePointsRef.current,
       wordCount,
       duration
     );
-  
+
     const heatmapData = generateHeatmapData(gazePointsRef.current);
-  
+
     const metrics: ReadingMetrics = {
       gaze_points: gazePointsRef.current,
       text_length: wordCount,
@@ -154,14 +158,18 @@ export default function ReadingAssessment({
       regression_index: calculatedMetrics.regression_index,
       heatmap_data: heatmapData,
     };
-  
+
     setPhase('complete');
-    
-    // Очищаем WebGazer перед переходом
+
+    // Clean up WebGazer and pass results
     setTimeout(() => {
-      cleanupWebGazer();
+      console.log('🧹 Cleaning up before completing...');
+      if (isWebGazerInitialized.current) {
+        cleanupWebGazer();
+        isWebGazerInitialized.current = false;
+      }
       onComplete(metrics);
-    }, 500);
+    }, 1000);
   };
 
   const currentCalibrationPoint =

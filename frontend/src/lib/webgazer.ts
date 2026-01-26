@@ -4,27 +4,25 @@
 
 import { GazePoint, Fixation } from '@/types';
 
-
-/**
- * Initialize WebGazer eye-tracking
- */
-/**
- * Initialize WebGazer eye-tracking
- */
 /**
  * Initialize WebGazer eye-tracking with camera permission check
  */
 export async function initializeWebGazer(): Promise<void> {
   try {
+    console.log('🎥 Starting WebGazer initialization...');
+    
     if (!window.webgazer) {
       throw new Error('WebGazer not loaded');
     }
 
     // Check camera permission
+    console.log('📹 Requesting camera permission...');
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    console.log('✅ Camera permission granted');
     stream.getTracks().forEach(track => track.stop()); // Release immediately
 
     // Initialize WebGazer
+    console.log('⚙️ Configuring WebGazer...');
     await window.webgazer
       .setRegression('ridge')
       .setTracker('TFFacemesh')
@@ -35,11 +33,12 @@ export async function initializeWebGazer(): Promise<void> {
       .begin();
 
     // Wait for full initialization
+    console.log('⏳ Waiting for WebGazer warmup...');
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    console.log('WebGazer initialized successfully');
+    console.log('✅ WebGazer initialized successfully');
   } catch (error) {
-    console.error('WebGazer initialization error:', error);
+    console.error('❌ WebGazer initialization error:', error);
     throw new Error('Failed to initialize eye tracking. Please allow camera access.');
   }
 }
@@ -54,8 +53,16 @@ export function startGazeTracking(
     throw new Error('WebGazer not initialized');
   }
 
+  console.log('👁️ Starting gaze tracking...');
+
+  let gazeCount = 0;
+
   window.webgazer.setGazeListener((data, timestamp) => {
     if (data && data.x && data.y) {
+      gazeCount++;
+      if (gazeCount % 30 === 0) {
+        console.log(`👁️ Gaze data received: ${gazeCount} points`);
+      }
       onGazeData({
         x: data.x,
         y: data.y,
@@ -65,6 +72,7 @@ export function startGazeTracking(
   });
 
   window.webgazer.resume();
+  console.log('✅ Gaze tracking started');
 }
 
 /**
@@ -72,6 +80,7 @@ export function startGazeTracking(
  */
 export function stopGazeTracking(): void {
   if (window.webgazer) {
+    console.log('⏸️ Stopping gaze tracking...');
     window.webgazer.pause();
     window.webgazer.setGazeListener(() => {});
   }
@@ -80,80 +89,109 @@ export function stopGazeTracking(): void {
 /**
  * Cleanup and end WebGazer session
  */
-// webgazer.ts
-/**
- * Cleanup and end WebGazer session
- */
-/**
- * Cleanup and end WebGazer session
- */
-export function cleanupWebGazer() {
+export function cleanupWebGazer(): void {
   try {
-    if (window.webgazer) {
-      // Останавливаем отслеживание
-      window.webgazer.pause();
-      window.webgazer.setGazeListener(() => {}); // ← Вместо clearGazeListener
-      
-      // Скрываем видео и оверлеи
-      window.webgazer.showVideo(false);
-      window.webgazer.showFaceOverlay(false);
-      window.webgazer.showFaceFeedbackBox(false);
-      
-      // Пытаемся безопасно завершить WebGazer
-      try {
-        if (typeof window.webgazer.end === 'function') {
-          window.webgazer.end();
-        }
-      } catch (endError) {
-        console.warn('WebGazer.end() failed, continuing cleanup:', endError);
-      }
+    console.log('🧹 Starting WebGazer cleanup...');
+    
+    if (!window.webgazer) {
+      console.log('WebGazer already cleaned up');
+      return;
     }
 
-    // Удаляем ВСЕ video элементы на странице, созданные WebGazer
-    const allVideos = document.querySelectorAll('video');
-    allVideos.forEach((video) => {
-      if (video.id?.includes('webgazer') || 
-          video.className?.includes('webgazer') ||
-          !video.id) {
-        try {
-          const stream = video.srcObject as MediaStream;
-          if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-          }
+    // Stop tracking and clear listeners
+    window.webgazer.pause();
+    window.webgazer.setGazeListener(() => {});
+    
+    // Hide UI elements
+    window.webgazer.showVideo(false);
+    window.webgazer.showFaceOverlay(false);
+    window.webgazer.showFaceFeedbackBox(false);
+    window.webgazer.showPredictionPoints(false);
+
+    // Clean up video streams FIRST
+    console.log('📹 Stopping camera streams...');
+    const webgazerVideos = document.querySelectorAll('video');
+    webgazerVideos.forEach((video) => {
+      try {
+        const stream = video.srcObject as MediaStream;
+        if (stream) {
+          stream.getTracks().forEach(track => {
+            track.stop();
+            console.log('✅ Stopped track:', track.kind);
+          });
           video.srcObject = null;
-          
-          if (video.parentNode) {
-            video.parentNode.removeChild(video);
-          }
-        } catch (err) {
-          console.warn('Error removing video:', err);
         }
+      } catch (err) {
+        console.warn('Error stopping video stream:', err);
       }
     });
 
-    // Удаляем все canvas элементы WebGazer
-    const allCanvas = document.querySelectorAll('canvas');
-    allCanvas.forEach((canvas) => {
-      if (canvas.id?.includes('webgazer') || canvas.className?.includes('webgazer')) {
-        try {
-          if (canvas.parentNode) {
-            canvas.parentNode.removeChild(canvas);
-          }
-        } catch (err) {
-          console.warn('Error removing canvas:', err);
-        }
-      }
-    });
+    // Don't call .end() - it has DOM manipulation bugs
+    // Just pause WebGazer and clean up manually
+    console.log('⏸️ WebGazer paused (skipping .end() to avoid DOM errors)');
 
-    console.log('WebGazer cleanup completed');
+    // Manual cleanup of WebGazer DOM elements
+    cleanupWebGazerDOM();
+
+    console.log('✅ WebGazer cleanup completed');
   } catch (err) {
-    console.error('Error during WebGazer cleanup:', err);
+    console.error('❌ Error during WebGazer cleanup:', err);
   }
 }
 
+/**
+ * Remove WebGazer-created DOM elements
+ */
+function cleanupWebGazerDOM(): void {
+  try {
+    // Remove WebGazer video elements
+    const selectors = [
+      '#webgazerVideoFeed',
+      '#webgazerFaceOverlay',
+      '#webgazerFaceFeedbackBox',
+      '#webgazerVideoCanvas',
+    ];
 
+    selectors.forEach(selector => {
+      const elements = document.querySelectorAll(selector);
+      elements.forEach(element => {
+        try {
+          if (element.parentNode) {
+            element.parentNode.removeChild(element);
+          }
+        } catch (err) {
+          // Element might already be removed
+        }
+      });
+    });
 
+    // Remove any orphaned WebGazer elements
+    document.querySelectorAll('video, canvas').forEach(element => {
+      const style = element.getAttribute('style') || '';
+      if (style.includes('position') && !element.id.startsWith('user-')) {
+        try {
+          if (element.tagName === 'VIDEO') {
+            const video = element as HTMLVideoElement;
+            const stream = video.srcObject as MediaStream;
+            if (stream) {
+              stream.getTracks().forEach(track => track.stop());
+            }
+            video.srcObject = null;
+          }
+          
+          if (element.parentNode) {
+            element.parentNode.removeChild(element);
+          }
+        } catch (err) {
+          // Ignore errors
+        }
+      }
+    });
 
+  } catch (err) {
+    console.warn('Error cleaning up WebGazer DOM:', err);
+  }
+}
 
 /**
  * Calculate reading metrics from gaze points
