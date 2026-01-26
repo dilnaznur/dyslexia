@@ -15,23 +15,7 @@
     <meta property="og:title" content="MindStep - Early Dyslexia Detection Platform" />
     <meta property="og:description" content="Clinical-grade AI for early dyslexia detection with multimodal assessment." />
 
-    <script>
-      console.log('🔧 Setting up MediaPipe file location...');
-      
-      // Глобальная функция для локации MediaPipe файлов
-      window.locateFile = function(file) {
-        console.log('📦 Locating file:', file);
-        
-        // Все MediaPipe файлы грузим с CDN
-        const baseUrl = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/';
-        const fullUrl = baseUrl + file;
-        
-        console.log('✅ Loading from:', fullUrl);
-        return fullUrl;
-      };
-      
-      console.log('✅ window.locateFile configured');
-    </script>
+    
     <!-- WebGazer.js -->
     <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
 
