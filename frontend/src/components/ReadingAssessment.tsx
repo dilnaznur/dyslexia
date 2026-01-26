@@ -1,40 +1,8 @@
-/**
- * Reading Assessment with Eye-Tracking Module
- * Uses WebGazer.js to track eye movements during reading
- */
-import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Eye, CheckCircle, AlertCircle } from 'lucide-react';
-import {
-  initializeWebGazer,
-  startGazeTracking,
-  stopGazeTracking,
-  cleanupWebGazer,
-  calculateReadingMetrics,
-  generateHeatmapData,
-} from '@/lib/webgazer';
-import { GazePoint, ReadingMetrics } from '@/types';
-
-interface ReadingAssessmentProps {
-  onComplete: (metrics: ReadingMetrics) => void;
-  onSkip?: () => void;
-}
-
-const READING_TEXT = `Once upon a time, there was a clever fox who lived in a beautiful forest. The fox loved to explore and find new adventures every day. One sunny morning, the fox discovered a sparkling stream with crystal clear water. Many colorful fish swam happily in the stream. The fox made friends with a wise old owl who lived in a tall oak tree. Together, they explored the magical forest and helped other animals. They found hidden treasures and solved interesting puzzles. The fox learned that friendship and kindness are the most valuable treasures of all.`;
-
-const CALIBRATION_POINTS = [
-  { x: 10, y: 10 },
-  { x: 90, y: 10 },
-  { x: 50, y: 50 },
-  { x: 10, y: 90 },
-  { x: 90, y: 90 },
-];
-
 export default function ReadingAssessment({
   onComplete,
   onSkip,
 }: ReadingAssessmentProps) {
-  const [phase, setPhase] = useState<
+  const [phase, setPhase] = useState
     'intro' | 'calibration' | 'reading' | 'complete'
   >('intro');
   const [calibrationIndex, setCalibrationIndex] = useState(0);
@@ -47,8 +15,10 @@ export default function ReadingAssessment({
   const isWebGazerInitialized = useRef(false);
   const hasCompletedRef = useRef(false);
   const isInitializing = useRef(false);
+  
+  // WebGazer container ref - КРИТИЧНО: контейнер не должен удаляться
+  const webgazerContainerRef = useRef<HTMLDivElement>(null);
 
-  // Cleanup ТОЛЬКО при размонтировании компонента
   useEffect(() => {
     return () => {
       console.log('🔄 Component unmounting...');
@@ -60,12 +30,11 @@ export default function ReadingAssessment({
     };
   }, []);
 
-  // Update progress during reading
   useEffect(() => {
     if (phase === 'reading' && startTimeRef.current > 0) {
       const interval = setInterval(() => {
         const elapsed = Date.now() - startTimeRef.current;
-        const expectedDuration = 120000; // 2 minutes
+        const expectedDuration = 120000;
         const newProgress = Math.min((elapsed / expectedDuration) * 100, 100);
         setProgress(newProgress);
 
@@ -79,7 +48,6 @@ export default function ReadingAssessment({
   }, [phase, startTimeRef.current]);
 
   const handleStart = async () => {
-    // Защита от двойного клика
     if (isInitializing.current || isWebGazerInitialized.current || isStarting) {
       console.log('⚠️ Already starting or started');
       return;
@@ -94,7 +62,9 @@ export default function ReadingAssessment({
       await initializeWebGazer();
       isWebGazerInitialized.current = true;
       
+      // Переходим к калибровке БЕЗ перерисовки
       setPhase('calibration');
+      console.log('✅ Moving to calibration phase');
     } catch (err) {
       setError(
         'Failed to initialize eye tracking. Please ensure camera access is granted.'
@@ -106,15 +76,29 @@ export default function ReadingAssessment({
     }
   };
 
-  // Обработка клика по калибровочной точке
-  const handleCalibrationClick = () => {
+  const handleCalibrationClick = async (event: React.MouseEvent) => {
     console.log(`📍 Calibration point ${calibrationIndex + 1} clicked`);
+    
+    // Записываем калибровочную точку
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    
+    if (window.webgazer) {
+      // Записываем несколько сэмплов для точности
+      for (let i = 0; i < 5; i++) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        window.webgazer.recordScreenPosition(x, y, 'click');
+      }
+      console.log(`✅ Recorded calibration at (${x.toFixed(0)}, ${y.toFixed(0)})`);
+    }
     
     if (calibrationIndex < CALIBRATION_POINTS.length - 1) {
       setCalibrationIndex(prev => prev + 1);
     } else {
-      // Калибровка завершена
       console.log('✅ Calibration complete, starting reading...');
+      
+      // ВАЖНО: Скрываем элементы калибровки, но НЕ удаляем их
       setTimeout(() => {
         setPhase('reading');
         startReading();
@@ -133,9 +117,15 @@ export default function ReadingAssessment({
     startTimeRef.current = startTime;
     gazePointsRef.current = [];
 
-    // Начинаем отслеживание взгляда
+    // Скрываем UI элементы WebGazer
+    if (window.webgazer) {
+      window.webgazer.showPredictionPoints(false);
+      window.webgazer.showFaceOverlay(false);
+      window.webgazer.showFaceFeedbackBox(false);
+      // Оставляем видео включенным!
+    }
+
     startGazeTracking((gazeData) => {
-      // Подробное логирование первых 10 точек
       if (gazePointsRef.current.length < 10) {
         console.log(`👁️ Gaze point ${gazePointsRef.current.length + 1}:`, 
           gazeData.x.toFixed(2), gazeData.y.toFixed(2));
@@ -143,7 +133,6 @@ export default function ReadingAssessment({
       gazePointsRef.current.push(gazeData);
     });
 
-    // Проверка через 2 секунды
     setTimeout(() => {
       console.log(`📊 Check: ${gazePointsRef.current.length} points collected so far`);
       if (gazePointsRef.current.length === 0) {
@@ -153,7 +142,6 @@ export default function ReadingAssessment({
   };
 
   const handleReadingComplete = () => {
-    // Предотвращаем повторный вызов
     if (hasCompletedRef.current) {
       console.log('⚠️ Already completed, skipping');
       return;
@@ -190,7 +178,6 @@ export default function ReadingAssessment({
 
     setPhase('complete');
 
-    // Очищаем WebGazer перед переходом
     setTimeout(() => {
       console.log('🧹 Cleaning up WebGazer after completion');
       if (isWebGazerInitialized.current) {
@@ -208,6 +195,15 @@ export default function ReadingAssessment({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-soft-blue to-mint p-8">
+      {/* WebGazer container - ВСЕГДА в DOM */}
+      <div 
+        ref={webgazerContainerRef}
+        className="fixed top-4 right-4 z-50"
+        style={{ 
+          display: phase === 'intro' || phase === 'complete' ? 'none' : 'block' 
+        }}
+      />
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -257,17 +253,23 @@ export default function ReadingAssessment({
           </div>
         )}
 
-        {/* Calibration Phase */}
-        {phase === 'calibration' && currentCalibrationPoint && (
-          <div className="relative h-screen">
-            <div className="text-center mb-8 absolute top-8 left-0 right-0">
-              <p className="text-xl text-text-primary font-bold">
-                Click on the red circle
-              </p>
-              <p className="text-text-secondary">
-                Point {calibrationIndex + 1} of {CALIBRATION_POINTS.length}
-              </p>
-            </div>
+        {/* Calibration Phase - используем opacity вместо условного рендеринга */}
+        <div 
+          className="fixed inset-0 z-40"
+          style={{ 
+            display: phase === 'calibration' ? 'block' : 'none',
+            pointerEvents: phase === 'calibration' ? 'auto' : 'none'
+          }}
+        >
+          <div className="text-center mb-8 absolute top-8 left-0 right-0">
+            <p className="text-xl text-text-primary font-bold">
+              Click on the red circle
+            </p>
+            <p className="text-text-secondary">
+              Point {calibrationIndex + 1} of {CALIBRATION_POINTS.length}
+            </p>
+          </div>
+          {currentCalibrationPoint && (
             <motion.button
               key={calibrationIndex}
               initial={{ scale: 0 }}
@@ -282,8 +284,8 @@ export default function ReadingAssessment({
             >
               {calibrationIndex + 1}
             </motion.button>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Reading Phase */}
         {phase === 'reading' && (
