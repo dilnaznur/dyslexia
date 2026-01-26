@@ -8,29 +8,39 @@ import { GazePoint, Fixation } from '@/types';
 /**
  * Initialize WebGazer eye-tracking
  */
+/**
+ * Initialize WebGazer eye-tracking
+ */
+/**
+ * Initialize WebGazer eye-tracking with camera permission check
+ */
 export async function initializeWebGazer(): Promise<void> {
   try {
     if (!window.webgazer) {
       throw new Error('WebGazer not loaded');
     }
 
+    // Check camera permission
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    stream.getTracks().forEach(track => track.stop()); // Release immediately
+
+    // Initialize WebGazer
     await window.webgazer
       .setRegression('ridge')
       .setTracker('TFFacemesh')
-      .begin();
-
-    window.webgazer
       .showPredictionPoints(false)
       .showVideo(true)
       .showFaceOverlay(false)
       .showFaceFeedbackBox(false)
-      .applyKalmanFilter(true);
+      .begin();
 
+    // Wait for full initialization
     await new Promise(resolve => setTimeout(resolve, 2000));
-    console.log('WebGazer initialized');
+    
+    console.log('WebGazer initialized successfully');
   } catch (error) {
-    console.error('WebGazer error:', error);
-    throw error;
+    console.error('WebGazer initialization error:', error);
+    throw new Error('Failed to initialize eye tracking. Please allow camera access.');
   }
 }
 
