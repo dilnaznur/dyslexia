@@ -57,7 +57,7 @@ export function startGazeTracking(
 
   let gazeCount = 0;
 
-  window.webgazer.setGazeListener((data, timestamp) => {
+  window.webgazer.setGazeListener((data: any, timestamp: number) => {
     if (data && data.x && data.y) {
       gazeCount++;
       if (gazeCount % 30 === 0) {

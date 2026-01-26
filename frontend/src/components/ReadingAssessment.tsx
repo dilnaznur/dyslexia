@@ -24,13 +24,9 @@ const READING_TEXT = `Once upon a time, there was a clever fox who lived in a be
 
 const CALIBRATION_POINTS = [
   { x: 10, y: 10 },
-  { x: 50, y: 10 },
   { x: 90, y: 10 },
-  { x: 10, y: 50 },
   { x: 50, y: 50 },
-  { x: 90, y: 50 },
   { x: 10, y: 90 },
-  { x: 50, y: 90 },
   { x: 90, y: 90 },
 ];
 
@@ -63,27 +59,6 @@ export default function ReadingAssessment({
       }
     };
   }, []);
-
-  // Handle calibration
-  useEffect(() => {
-    if (phase === 'calibration' && calibrationIndex < CALIBRATION_POINTS.length) {
-      const timer = setTimeout(() => {
-        setCalibrationIndex((prev) => prev + 1);
-      }, 2000);
-
-      return () => clearTimeout(timer);
-    } else if (
-      phase === 'calibration' &&
-      calibrationIndex >= CALIBRATION_POINTS.length
-    ) {
-      console.log('✅ Calibration complete, starting reading...');
-      setPhase('reading');
-      // Небольшая задержка перед началом чтения
-      setTimeout(() => {
-        startReading();
-      }, 500);
-    }
-  }, [phase, calibrationIndex]);
 
   // Update progress during reading
   useEffect(() => {
@@ -131,6 +106,22 @@ export default function ReadingAssessment({
     }
   };
 
+  // Обработка клика по калибровочной точке
+  const handleCalibrationClick = () => {
+    console.log(`📍 Calibration point ${calibrationIndex + 1} clicked`);
+    
+    if (calibrationIndex < CALIBRATION_POINTS.length - 1) {
+      setCalibrationIndex(prev => prev + 1);
+    } else {
+      // Калибровка завершена
+      console.log('✅ Calibration complete, starting reading...');
+      setTimeout(() => {
+        setPhase('reading');
+        startReading();
+      }, 500);
+    }
+  };
+
   const startReading = () => {
     if (!isWebGazerInitialized.current) {
       console.error('❌ WebGazer not initialized, cannot start reading');
@@ -144,12 +135,21 @@ export default function ReadingAssessment({
 
     // Начинаем отслеживание взгляда
     startGazeTracking((gazeData) => {
-      // Подробное логирование первых 5 точек
-      if (gazePointsRef.current.length < 5) {
-        console.log('👁️ Gaze point received:', gazeData.x.toFixed(2), gazeData.y.toFixed(2));
+      // Подробное логирование первых 10 точек
+      if (gazePointsRef.current.length < 10) {
+        console.log(`👁️ Gaze point ${gazePointsRef.current.length + 1}:`, 
+          gazeData.x.toFixed(2), gazeData.y.toFixed(2));
       }
       gazePointsRef.current.push(gazeData);
     });
+
+    // Проверка через 2 секунды
+    setTimeout(() => {
+      console.log(`📊 Check: ${gazePointsRef.current.length} points collected so far`);
+      if (gazePointsRef.current.length === 0) {
+        console.warn('⚠️ No gaze data yet - WebGazer may need more time or recalibration');
+      }
+    }, 2000);
   };
 
   const handleReadingComplete = () => {
@@ -226,8 +226,8 @@ export default function ReadingAssessment({
             </p>
             <div className="bg-pale-yellow p-4 rounded-lg mb-6">
               <p className="text-base">
-                <strong>What to do:</strong> First, we'll calibrate the eye
-                tracker by looking at dots on the screen. Then, read the story
+                <strong>What to do:</strong> First, you'll calibrate the eye
+                tracker by clicking on dots that appear on the screen. Then, read the story
                 at your normal pace.
               </p>
             </div>
@@ -260,26 +260,28 @@ export default function ReadingAssessment({
         {/* Calibration Phase */}
         {phase === 'calibration' && currentCalibrationPoint && (
           <div className="relative h-screen">
-            <div className="text-center mb-8">
+            <div className="text-center mb-8 absolute top-8 left-0 right-0">
               <p className="text-xl text-text-primary font-bold">
-                Look at the red circle and follow it with your eyes
+                Click on the red circle
               </p>
               <p className="text-text-secondary">
-                Calibration: {calibrationIndex + 1} of{' '}
-                {CALIBRATION_POINTS.length}
+                Point {calibrationIndex + 1} of {CALIBRATION_POINTS.length}
               </p>
             </div>
-            <motion.div
+            <motion.button
               key={calibrationIndex}
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="absolute w-8 h-8 bg-red-500 rounded-full"
+              onClick={handleCalibrationClick}
+              className="absolute w-16 h-16 bg-red-500 rounded-full cursor-pointer hover:bg-red-600 transition-colors shadow-lg flex items-center justify-center text-white font-bold"
               style={{
                 left: `${currentCalibrationPoint.x}%`,
                 top: `${currentCalibrationPoint.y}%`,
                 transform: 'translate(-50%, -50%)',
               }}
-            />
+            >
+              {calibrationIndex + 1}
+            </motion.button>
           </div>
         )}
 
