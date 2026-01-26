@@ -57,17 +57,6 @@ async function initializeWebGazer(): Promise<void> {
       throw new Error('WebGazer not loaded');
     }
 
-    console.log('📹 Requesting camera permission...');
-    const stream = await navigator.mediaDevices.getUserMedia({ 
-      video: {
-        facingMode: 'user',
-        width: { ideal: 640 },
-        height: { ideal: 480 }
-      } 
-    });
-    console.log('✅ Camera permission granted');
-    stream.getTracks().forEach(track => track.stop());
-
     console.log('⚙️ Configuring WebGazer...');
     await window.webgazer
       .setRegression('ridge')
@@ -78,9 +67,73 @@ async function initializeWebGazer(): Promise<void> {
       .showFaceFeedbackBox(false)
       .begin();
 
-    // WebGazer needs 5-7 seconds to warm up properly
-    console.log('⏳ Waiting for WebGazer to warm up (this takes about 7 seconds)...');
+    // WebGazer needs time to warm up
+    console.log('⏳ Waiting for WebGazer to warm up...');
     await new Promise(resolve => setTimeout(resolve, 7000));
+    
+    // ИСПРАВЛЕНО: Правильные селекторы для WebGazer
+    console.log('📹 Positioning video element...');
+    const waitForVideo = async () => {
+      for (let i = 0; i < 20; i++) {
+        // WebGazer создает video элемент БЕЗ ID, нужно искать по другому
+        const videos = document.querySelectorAll('video');
+        let videoElement: HTMLVideoElement | null = null;
+        
+        // Найди видео которое создал WebGazer
+        videos.forEach(v => {
+          if (v.style.position === 'fixed' || v.parentElement?.id === 'webgazerVideoContainer') {
+            videoElement = v;
+          }
+        });
+        
+        // Если не нашли по критериям, возьми первое video
+        if (!videoElement && videos.length > 0) {
+          videoElement = videos[0] as HTMLVideoElement;
+        }
+        
+        if (videoElement) {
+          console.log('✅ Video element found!');
+          videoElement.style.position = 'fixed';
+          videoElement.style.top = '10px';
+          videoElement.style.right = '10px';
+          videoElement.style.width = '320px';
+          videoElement.style.height = '240px';
+          videoElement.style.zIndex = '9999';
+          videoElement.style.display = 'block';
+          
+          // Также спозиционируй canvas если есть
+          const canvases = document.querySelectorAll('canvas');
+          canvases.forEach(canvas => {
+            const canvasEl = canvas as HTMLCanvasElement;
+            if (canvasEl.width === videoElement!.videoWidth || canvasEl.id.includes('webgazer')) {
+              canvasEl.style.position = 'fixed';
+              canvasEl.style.top = '10px';
+              canvasEl.style.right = '10px';
+              canvasEl.style.zIndex = '9998';
+            }
+          });
+          
+          return true;
+        }
+        
+        console.log(`⏳ Waiting for video element... attempt ${i + 1}/20`);
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      console.error('❌ Video element not found after 10 seconds');
+      
+      // Дополнительная диагностика
+      console.log('🔍 All elements check:');
+      console.log('Videos:', document.querySelectorAll('video').length);
+      console.log('Canvases:', document.querySelectorAll('canvas').length);
+      
+      return false;
+    };
+    
+    const videoFound = await waitForVideo();
+    if (!videoFound) {
+      throw new Error('Video element not created by WebGazer');
+    }
     
     console.log('✅ WebGazer initialized successfully');
   } catch (error) {
@@ -133,8 +186,10 @@ function stopGazeTracking(): void {
 }
 
 function cleanupWebGazer(): void {
+  console.trace('🧹 cleanupWebGazer called from:');
   try {
     console.log('🧹 Starting WebGazer cleanup...');
+    
     
     if (!window.webgazer) {
       console.log('⚠️ WebGazer not found, skipping cleanup');
@@ -149,22 +204,7 @@ function cleanupWebGazer(): void {
     window.webgazer.showFaceFeedbackBox(false);
     window.webgazer.showPredictionPoints(false);
 
-    console.log('📹 Stopping camera streams...');
-    const webgazerVideos = document.querySelectorAll('video');
-    webgazerVideos.forEach((video) => {
-      try {
-        const stream = video.srcObject as MediaStream;
-        if (stream) {
-          stream.getTracks().forEach(track => {
-            track.stop();
-            console.log('✅ Stopped track:', track.kind);
-          });
-          video.srcObject = null;
-        }
-      } catch (err) {
-        console.warn('⚠️ Error stopping video stream:', err);
-      }
-    });
+    
 
     console.log('✅ WebGazer cleanup completed');
   } catch (err) {
@@ -316,18 +356,8 @@ export default function ReadingAssessment({
   const isWebGazerInitialized = useRef(false);
   const hasCompletedRef = useRef(false);
   const isInitializing = useRef(false);
-  const webgazerContainerRef = useRef<HTMLDivElement>(null);
+ 
 
-  useEffect(() => {
-    return () => {
-      console.log('🔄 Component unmounting...');
-      if (isWebGazerInitialized.current && !hasCompletedRef.current) {
-        console.log('🧹 Cleaning up WebGazer on unmount');
-        cleanupWebGazer();
-        isWebGazerInitialized.current = false;
-      }
-    };
-  }, []);
 
   useEffect(() => {
     if (phase === 'reading' && startTimeRef.current > 0) {
@@ -397,18 +427,61 @@ export default function ReadingAssessment({
       console.error('❌ WebGazer not initialized, cannot start reading');
       return;
     }
-
+  
     console.log('📖 Starting reading phase');
     const startTime = Date.now();
     startTimeRef.current = startTime;
     gazePointsRef.current = [];
-
+  
     if (window.webgazer) {
-      window.webgazer.showPredictionPoints(false);
+      console.log('📹 Configuring WebGazer for reading...');
+      
+      window.webgazer.showVideo(true);
+      window.webgazer.showPredictionPoints(true);
       window.webgazer.showFaceOverlay(false);
       window.webgazer.showFaceFeedbackBox(false);
+      window.webgazer.resume();
+      
+      // Проверь что видео существует - ИСПРАВЛЕННЫЕ СЕЛЕКТОРЫ
+      const checkVideo = () => {
+        const videos = document.querySelectorAll('video');
+        
+        if (videos.length > 0) {
+          console.log(`📹 Found ${videos.length} video element(s)`);
+          
+          videos.forEach((video, i) => {
+            const v = video as HTMLVideoElement;
+            console.log(`Video ${i}:`, {
+              paused: v.paused,
+              readyState: v.readyState,
+              videoWidth: v.videoWidth,
+              videoHeight: v.videoHeight,
+              display: v.style.display,
+              position: v.style.position
+            });
+            
+            // Убедись что видео видимо и правильно позиционировано
+            v.style.display = 'block';
+            v.style.position = 'fixed';
+            v.style.top = '10px';
+            v.style.right = '10px';
+            v.style.zIndex = '9999';
+          });
+        } else {
+          console.error('❌ No video elements found!');
+        }
+        
+        // Проверь canvases тоже
+        const canvases = document.querySelectorAll('canvas');
+        console.log(`🎨 Found ${canvases.length} canvas element(s)`);
+      };
+      
+      checkVideo();
+      setTimeout(checkVideo, 100);
+      
+      console.log('✅ WebGazer configured for reading');
     }
-
+  
     startGazeTracking((gazeData) => {
       if (gazePointsRef.current.length < 10) {
         console.log(`👁️ Gaze point ${gazePointsRef.current.length + 1}:`, 
@@ -416,14 +489,29 @@ export default function ReadingAssessment({
       }
       gazePointsRef.current.push(gazeData);
     });
-
+  
     setTimeout(() => {
       console.log(`📊 Check: ${gazePointsRef.current.length} points collected so far`);
       if (gazePointsRef.current.length === 0) {
-        console.warn('⚠️ No gaze data yet - WebGazer may need more time or recalibration');
+        console.warn('⚠️ No gaze data yet - diagnosing...');
+        
+        const videos = document.querySelectorAll('video');
+        if (videos.length > 0) {
+          const video = videos[0] as HTMLVideoElement;
+          console.log('📹 Video status:', {
+            paused: video.paused,
+            readyState: video.readyState,
+            videoWidth: video.videoWidth,
+            videoHeight: video.videoHeight,
+            display: video.style.display
+          });
+        } else {
+          console.error('❌ No video elements on page!');
+        }
       }
     }, 2000);
   };
+  
 
   const handleReadingComplete = () => {
     if (hasCompletedRef.current) {
@@ -477,156 +565,152 @@ export default function ReadingAssessment({
       ? CALIBRATION_POINTS[calibrationIndex]
       : null;
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-green-100 p-8">
-      <div 
-        ref={webgazerContainerRef}
-        className="fixed top-4 right-4 z-50"
-        style={{ 
-          display: phase === 'intro' || phase === 'complete' ? 'none' : 'block' 
-        }}
-      />
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-4xl mx-auto"
-      >
-        {phase === 'intro' && (
-          <div className="glass-card p-8 text-center">
-            <Eye className="w-16 h-16 mx-auto mb-4 text-blue-500" />
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">
-              Reading Assessment with Eye Tracking
-            </h2>
-            <p className="text-lg mb-6 text-gray-600 leading-relaxed">
-              We'll track your eye movements while you read a short story. This
-              helps us understand your reading patterns.
-            </p>
-            <div className="bg-yellow-100 p-4 rounded-lg mb-6">
-              <p className="text-base">
-                <strong>What to do:</strong> First, you'll calibrate the eye
-                tracker by clicking on dots that appear on the screen. Then, read the story
-                at your normal pace.
-              </p>
-            </div>
-            {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                <AlertCircle className="inline mr-2" />
-                {error}
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-100 to-green-100 p-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-4xl mx-auto"
+          >
+            {/* INTRO PHASE - кнопка Start должна быть здесь */}
+            {phase === 'intro' && (
+              <div className="glass-card p-8 text-center">
+                <Eye className="w-16 h-16 mx-auto mb-4 text-blue-500" />
+                <h2 className="text-2xl font-bold mb-4 text-gray-800">
+                  Reading Assessment with Eye Tracking
+                </h2>
+                <p className="text-lg mb-6 text-gray-600 leading-relaxed">
+                  We'll track your eye movements while you read a short story. This
+                  helps us understand your reading patterns.
+                </p>
+                <div className="bg-yellow-100 p-4 rounded-lg mb-6">
+                  <p className="text-base">
+                    <strong>What to do:</strong> First, you'll calibrate the eye
+                    tracker by clicking on dots that appear on the screen. Then, read the story
+                    at your normal pace.
+                  </p>
+                </div>
+                {error && (
+                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    <AlertCircle className="inline mr-2" />
+                    {error}
+                  </div>
+                )}
+                <button
+                  onClick={handleStart}
+                  disabled={isStarting}
+                  className={`bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full transition-transform hover:scale-105 ${
+                    isStarting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {isStarting ? 'Starting...' : 'Start Assessment'}
+                </button>
+                {onSkip && (
+                  <button
+                    onClick={onSkip}
+                    className="ml-4 text-gray-600 hover:text-gray-800 underline"
+                  >
+                    Skip this step
+                  </button>
+                )}
               </div>
             )}
-            <button
-              onClick={handleStart}
-              disabled={isStarting}
-              className={`bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full transition-transform hover:scale-105 ${
-                isStarting ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              {isStarting ? 'Starting...' : 'Start Assessment'}
-            </button>
-            {onSkip && (
-              <button
-                onClick={onSkip}
-                className="ml-4 text-gray-600 hover:text-gray-800 underline"
-              >
-                Skip this step
-              </button>
-            )}
-          </div>
-        )}
-
-        <div 
-          className="fixed inset-0 z-40"
-          style={{ 
-            display: phase === 'calibration' ? 'block' : 'none',
-            pointerEvents: phase === 'calibration' ? 'auto' : 'none'
-          }}
-        >
-          <div className="text-center mb-8 absolute top-8 left-0 right-0">
-            <p className="text-xl text-gray-800 font-bold">
-              Click on the red circle
-            </p>
-            <p className="text-gray-600">
-              Point {calibrationIndex + 1} of {CALIBRATION_POINTS.length}
-            </p>
-          </div>
-          {currentCalibrationPoint && (
-            <motion.button
-              key={calibrationIndex}
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              onClick={handleCalibrationClick}
-              className="absolute w-16 h-16 bg-red-500 rounded-full cursor-pointer hover:bg-red-600 transition-colors shadow-lg flex items-center justify-center text-white font-bold"
-              style={{
-                left: `${currentCalibrationPoint.x}%`,
-                top: `${currentCalibrationPoint.y}%`,
-                transform: 'translate(-50%, -50%)',
+      
+            {/* CALIBRATION PHASE */}
+            <div 
+              className="fixed inset-0 z-40"
+              style={{ 
+                display: phase === 'calibration' ? 'block' : 'none',
+                pointerEvents: phase === 'calibration' ? 'auto' : 'none'
               }}
             >
-              {calibrationIndex + 1}
-            </motion.button>
-          )}
-        </div>
-
-        {phase === 'reading' && (
-          <div className="glass-card p-8">
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-600">Reading Progress</span>
-                <span className="text-gray-800 font-bold">
-                  {Math.round(progress)}%
-                </span>
+              <div className="text-center mb-8 absolute top-8 left-0 right-0">
+                <p className="text-xl text-gray-800 font-bold">
+                  Click on the red circle
+                </p>
+                <p className="text-gray-600">
+                  Point {calibrationIndex + 1} of {CALIBRATION_POINTS.length}
+                </p>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <motion.div
-                  className="bg-green-500 h-3 rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                />
+              {currentCalibrationPoint && (
+                <motion.button
+                  key={calibrationIndex}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  onClick={handleCalibrationClick}
+                  className="absolute w-16 h-16 bg-red-500 rounded-full cursor-pointer hover:bg-red-600 transition-colors shadow-lg flex items-center justify-center text-white font-bold"
+                  style={{
+                    left: `${currentCalibrationPoint.x}%`,
+                    top: `${currentCalibrationPoint.y}%`,
+                    transform: 'translate(-50%, -50%)',
+                  }}
+                >
+                  {calibrationIndex + 1}
+                </motion.button>
+              )}
+            </div>
+      
+            {/* READING PHASE */}
+            {phase === 'reading' && (
+              <div className="glass-card p-8">
+                <div className="mb-6">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-600">Reading Progress</span>
+                    <span className="text-gray-800 font-bold">
+                      {Math.round(progress)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <motion.div
+                      className="bg-green-500 h-3 rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+      
+                <div className="bg-white p-8 rounded-lg shadow-inner">
+                  <p className="text-xl leading-relaxed text-gray-800">
+                    {READING_TEXT}
+                  </p>
+                </div>
+      
+                <button
+                  onClick={handleReadingComplete}
+                  className="mt-6 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full transition-transform hover:scale-105"
+                >
+                  I'm Done Reading
+                </button>
               </div>
-            </div>
-
-            <div className="bg-white p-8 rounded-lg shadow-inner">
-              <p className="text-xl leading-relaxed text-gray-800">
-                {READING_TEXT}
-              </p>
-            </div>
-
-            <button
-              onClick={handleReadingComplete}
-              className="mt-6 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full transition-transform hover:scale-105"
-            >
-              I'm Done Reading
-            </button>
-          </div>
-        )}
-
-        {phase === 'complete' && (
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="glass-card p-8 text-center"
-          >
-            <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">
-              Great Job! 🎉
-            </h2>
-            <p className="text-lg text-gray-600">
-              Reading assessment complete. Analyzing your eye movements...
-            </p>
+            )}
+      
+            {/* COMPLETE PHASE */}
+            {phase === 'complete' && (
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="glass-card p-8 text-center"
+              >
+                <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
+                <h2 className="text-2xl font-bold mb-4 text-gray-800">
+                  Great Job! 🎉
+                </h2>
+                <p className="text-lg text-gray-600">
+                  Reading assessment complete. Analyzing your eye movements...
+                </p>
+              </motion.div>
+            )}
           </motion.div>
-        )}
-      </motion.div>
-
-      <style>{`
-        .glass-card {
-          background: rgba(255, 255, 255, 0.25);
-          backdrop-filter: blur(10px) saturate(180%);
-          border-radius: 20px;
-          border: 1px solid rgba(255, 255, 255, 0.4);
-          box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
-        }
-      `}</style>
-    </div>
-  );
+      
+          <style>{`
+            .glass-card {
+              background: rgba(255, 255, 255, 0.25);
+              backdrop-filter: blur(10px) saturate(180%);
+              border-radius: 20px;
+              border: 1px solid rgba(255, 255, 255, 0.4);
+              box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+            }
+          `}</style>
+        </div>
+      );
 }
