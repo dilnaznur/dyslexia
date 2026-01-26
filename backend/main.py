@@ -1,7 +1,7 @@
 """
 MindStep FastAPI Backend - Dyslexia Detection Platform
 """
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import logging
@@ -54,9 +54,10 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",  # React dev server
-        "http://127.0.0.1:5173",  # Alternative localhost
-        "https://*.vercel.app",  # Для Vercel
-        "*"  # Временно для тестирования (потом уберём)
+        "http://127.0.0.1:5173",
+        "https://mindstep-dyslexia-prime.vercel.app"  # Alternative localhost
+        "https://*.vercel.app"  # Для Vercel
+          # Временно для тестирования (потом уберём)
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -412,6 +413,17 @@ async def global_exception_handler(request, exc):
         content={
             "detail": "An unexpected error occurred. Please try again.",
             "error_type": type(exc).__name__
+        }
+    )
+@app.options("/api/gemini")
+async def options_gemini(request: Request):
+    """Handle CORS preflight for Gemini endpoint"""
+    return JSONResponse(
+        content={"status": "ok"},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
         }
     )
 
