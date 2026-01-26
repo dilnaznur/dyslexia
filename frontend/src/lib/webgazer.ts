@@ -12,18 +12,20 @@ export async function initializeWebGazer(): Promise<void> {
       throw new Error('WebGazer not loaded');
     }
 
-    await window.webgazer
-      .setRegression('ridge') // Use ridge regression
-      .setTracker('TFFacemesh') // Use TensorFlow FaceMesh tracker
-      .begin();
-
-    // Configure WebGazer UI
+    // Используйте clmtracker вместо TFFacemesh (не требует дополнительных файлов)
     window.webgazer
-      .showPredictionPoints(false) // Hide prediction dots
-      .showVideo(true) // Show webcam feed during calibration
+      .setRegression('ridge')
+      .setTracker('clmtracker') // ← Изменено с TFFacemesh на clmtracker
+      .showPredictionPoints(false)
+      .showVideo(true)
       .showFaceOverlay(false)
       .showFaceFeedbackBox(false)
-      .applyKalmanFilter(true); // Apply smoothing
+      .applyKalmanFilter(true);
+
+    await window.webgazer.begin();
+    
+    // Даём время на инициализацию
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     console.log('WebGazer initialized successfully');
   } catch (error) {
