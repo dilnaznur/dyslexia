@@ -48,15 +48,14 @@ export default function ReadingAssessment({
   const gazePointsRef = useRef<GazePoint[]>([]);
   const startTimeRef = useRef<number>(0);
   const isWebGazerInitialized = useRef(false);
+  const hasCompletedRef = useRef(false); // Новый флаг
 
-  // Initialize WebGazer only once - NOT on mount
-  // We'll initialize it when user clicks "Start Assessment"
-
-  // Cleanup on unmount
+  // Cleanup ТОЛЬКО при размонтировании компонента
   useEffect(() => {
     return () => {
-      console.log('🔄 Component unmounting, cleaning up WebGazer...');
-      if (isWebGazerInitialized.current) {
+      console.log('🔄 Component unmounting...');
+      if (isWebGazerInitialized.current && !hasCompletedRef.current) {
+        console.log('🧹 Cleaning up WebGazer on unmount');
         cleanupWebGazer();
         isWebGazerInitialized.current = false;
       }
@@ -68,14 +67,13 @@ export default function ReadingAssessment({
     if (phase === 'calibration' && calibrationIndex < CALIBRATION_POINTS.length) {
       const timer = setTimeout(() => {
         setCalibrationIndex((prev) => prev + 1);
-      }, 2000); // 2 seconds per calibration point
+      }, 2000);
 
       return () => clearTimeout(timer);
     } else if (
       phase === 'calibration' &&
       calibrationIndex >= CALIBRATION_POINTS.length
     ) {
-      // Calibration complete, start reading
       setPhase('reading');
       startReading();
     }
@@ -90,7 +88,6 @@ export default function ReadingAssessment({
         const newProgress = Math.min((elapsed / expectedDuration) * 100, 100);
         setProgress(newProgress);
 
-        // Auto-complete after 2 minutes
         if (newProgress >= 100) {
           handleReadingComplete();
         }
@@ -98,14 +95,13 @@ export default function ReadingAssessment({
 
       return () => clearInterval(interval);
     }
-  }, [phase]);
+  }, [phase, startTimeRef.current]); // Добавили startTimeRef.current в зависимости
 
   const handleStart = async () => {
     try {
       setError(null);
       console.log('🚀 User clicked Start Assessment');
       
-      // Initialize WebGazer только здесь
       await initializeWebGazer();
       isWebGazerInitialized.current = true;
       
@@ -114,7 +110,7 @@ export default function ReadingAssessment({
       setError(
         'Failed to initialize eye tracking. Please ensure camera access is granted.'
       );
-      console.error('WebGazer initialization error:', err);
+      console.error('❌ WebGazer initialization error:', err);
     }
   };
 
@@ -124,13 +120,19 @@ export default function ReadingAssessment({
     startTimeRef.current = startTime;
     gazePointsRef.current = [];
 
-    // Start collecting gaze data
     startGazeTracking((gazeData) => {
       gazePointsRef.current.push(gazeData);
     });
   };
 
   const handleReadingComplete = () => {
+    // Предотвращаем повторный вызов
+    if (hasCompletedRef.current) {
+      console.log('⚠️ Already completed, skipping');
+      return;
+    }
+    hasCompletedRef.current = true;
+
     console.log('✅ Reading complete, processing results...');
     stopGazeTracking();
 
@@ -161,9 +163,9 @@ export default function ReadingAssessment({
 
     setPhase('complete');
 
-    // Clean up WebGazer and pass results
+    // Очищаем WebGazer перед переходом
     setTimeout(() => {
-      console.log('🧹 Cleaning up before completing...');
+      console.log('🧹 Cleaning up WebGazer after completion');
       if (isWebGazerInitialized.current) {
         cleanupWebGazer();
         isWebGazerInitialized.current = false;

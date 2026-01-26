@@ -89,12 +89,15 @@ export function stopGazeTracking(): void {
 /**
  * Cleanup and end WebGazer session
  */
+/**
+ * Cleanup and end WebGazer session
+ */
 export function cleanupWebGazer(): void {
   try {
     console.log('🧹 Starting WebGazer cleanup...');
     
     if (!window.webgazer) {
-      console.log('WebGazer already cleaned up');
+      console.log('⚠️ WebGazer not found, skipping cleanup');
       return;
     }
 
@@ -122,20 +125,50 @@ export function cleanupWebGazer(): void {
           video.srcObject = null;
         }
       } catch (err) {
-        console.warn('Error stopping video stream:', err);
+        console.warn('⚠️ Error stopping video stream:', err);
       }
     });
 
-    // Don't call .end() - it has DOM manipulation bugs
-    // Just pause WebGazer and clean up manually
-    console.log('⏸️ WebGazer paused (skipping .end() to avoid DOM errors)');
+    // НЕ вызываем .end() - он вызывает ошибки DOM
+    console.log('⏸️ WebGazer paused (skipping .end() to avoid errors)');
 
-    // Manual cleanup of WebGazer DOM elements
+    // Manual cleanup of DOM elements
     cleanupWebGazerDOM();
 
     console.log('✅ WebGazer cleanup completed');
   } catch (err) {
     console.error('❌ Error during WebGazer cleanup:', err);
+  }
+}
+
+/**
+ * Remove WebGazer-created DOM elements
+ */
+function cleanupWebGazerDOM(): void {
+  try {
+    const selectors = [
+      '#webgazerVideoFeed',
+      '#webgazerFaceOverlay',
+      '#webgazerFaceFeedbackBox',
+      '#webgazerVideoCanvas',
+    ];
+
+    selectors.forEach(selector => {
+      const elements = document.querySelectorAll(selector);
+      elements.forEach(element => {
+        try {
+          if (element.parentNode) {
+            element.parentNode.removeChild(element);
+          }
+        } catch (err) {
+          // Element already removed
+        }
+      });
+    });
+
+    console.log('✅ WebGazer DOM elements cleaned');
+  } catch (err) {
+    console.warn('⚠️ Error cleaning WebGazer DOM:', err);
   }
 }
 
