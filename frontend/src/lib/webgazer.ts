@@ -8,33 +8,11 @@ import { GazePoint, Fixation } from '@/types';
  */
 export async function initializeWebGazer(): Promise<void> {
   try {
-    // Ждём пока WebGazer загрузится
-    if (!window.webgazer) {
-      console.log('Waiting for WebGazer to load...');
-      await new Promise((resolve, reject) => {
-        let attempts = 0;
-        const checkInterval = setInterval(() => {
-          attempts++;
-          if (window.webgazer) {
-            clearInterval(checkInterval);
-            resolve(true);
-          } else if (attempts > 50) { // 5 секунд максимум
-            clearInterval(checkInterval);
-            reject(new Error('WebGazer failed to load after 5 seconds'));
-          }
-        }, 100);
-      });
-    }
-
-    console.log('WebGazer loaded, initializing...');
-
-    // Простая инициализация
     await window.webgazer
       .setRegression('ridge')
       .setTracker('TFFacemesh')
       .begin();
 
-    // Настраиваем UI после запуска
     window.webgazer
       .showPredictionPoints(false)
       .showVideo(true)
@@ -42,13 +20,11 @@ export async function initializeWebGazer(): Promise<void> {
       .showFaceFeedbackBox(false)
       .applyKalmanFilter(true);
 
-    // Ждём инициализации
-    await new Promise(resolve => setTimeout(resolve, 3000));
-
-    console.log('WebGazer initialized successfully');
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    console.log('WebGazer initialized');
   } catch (error) {
-    console.error('WebGazer initialization error:', error);
-    throw new Error('Failed to initialize eye tracking. Please reload and allow camera access.');
+    console.error('WebGazer error:', error);
+    throw error;
   }
 }
 
