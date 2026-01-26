@@ -44,11 +44,13 @@ export default function ReadingAssessment({
   const [calibrationIndex, setCalibrationIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
   
   const gazePointsRef = useRef<GazePoint[]>([]);
   const startTimeRef = useRef<number>(0);
   const isWebGazerInitialized = useRef(false);
   const hasCompletedRef = useRef(false);
+  const isInitializing = useRef(false);
 
   // Cleanup ТОЛЬКО при размонтировании компонента
   useEffect(() => {
@@ -74,8 +76,12 @@ export default function ReadingAssessment({
       phase === 'calibration' &&
       calibrationIndex >= CALIBRATION_POINTS.length
     ) {
+      console.log('✅ Calibration complete, starting reading...');
       setPhase('reading');
-      startReading();
+      // Небольшая задержка перед началом чтения
+      setTimeout(() => {
+        startReading();
+      }, 500);
     }
   }, [phase, calibrationIndex]);
 
@@ -98,7 +104,15 @@ export default function ReadingAssessment({
   }, [phase, startTimeRef.current]);
 
   const handleStart = async () => {
+    // Защита от двойного клика
+    if (isInitializing.current || isWebGazerInitialized.current || isStarting) {
+      console.log('⚠️ Already starting or started');
+      return;
+    }
+
     try {
+      isInitializing.current = true;
+      setIsStarting(true);
       setError(null);
       console.log('🚀 User clicked Start Assessment');
       
@@ -111,16 +125,29 @@ export default function ReadingAssessment({
         'Failed to initialize eye tracking. Please ensure camera access is granted.'
       );
       console.error('❌ WebGazer initialization error:', err);
+      setIsStarting(false);
+    } finally {
+      isInitializing.current = false;
     }
   };
 
   const startReading = () => {
+    if (!isWebGazerInitialized.current) {
+      console.error('❌ WebGazer not initialized, cannot start reading');
+      return;
+    }
+
     console.log('📖 Starting reading phase');
     const startTime = Date.now();
     startTimeRef.current = startTime;
     gazePointsRef.current = [];
 
+    // Начинаем отслеживание взгляда
     startGazeTracking((gazeData) => {
+      // Подробное логирование первых 5 точек
+      if (gazePointsRef.current.length < 5) {
+        console.log('👁️ Gaze point received:', gazeData.x.toFixed(2), gazeData.y.toFixed(2));
+      }
       gazePointsRef.current.push(gazeData);
     });
   };
@@ -212,9 +239,12 @@ export default function ReadingAssessment({
             )}
             <button
               onClick={handleStart}
-              className="bg-soft-blue hover:bg-blue-400 text-white font-bold py-3 px-8 rounded-full transition-transform hover:scale-105"
+              disabled={isStarting}
+              className={`bg-soft-blue hover:bg-blue-400 text-white font-bold py-3 px-8 rounded-full transition-transform hover:scale-105 ${
+                isStarting ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             >
-              Start Assessment
+              {isStarting ? 'Starting...' : 'Start Assessment'}
             </button>
             {onSkip && (
               <button
