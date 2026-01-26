@@ -61,7 +61,7 @@ async function initializeWebGazer(): Promise<void> {
     
     await window.webgazer
       .setRegression('ridge')
-      .setTracker('clmtrackr')
+      .setTracker('TFFacemesh')
       .showPredictionPoints(true)
       .showVideo(true)
       .showFaceOverlay(false)
