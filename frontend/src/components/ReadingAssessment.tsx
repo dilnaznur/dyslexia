@@ -58,6 +58,16 @@ async function initializeWebGazer(): Promise<void> {
     }
 
     console.log('⚙️ Configuring WebGazer...');
+
+    if (window.webgazer.params) {
+      window.webgazer.params.faceMeshConfig = {
+        locateFile: (file: string) => {
+          console.log('📦 Loading MediaPipe file:', file);
+          // Используй CDN вместо локальных файлов
+          return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+        }
+      };
+    }
     await window.webgazer
       .setRegression('ridge')
       .setTracker('TFFacemesh')
@@ -66,6 +76,8 @@ async function initializeWebGazer(): Promise<void> {
       .showFaceOverlay(false)
       .showFaceFeedbackBox(false)
       .begin();
+
+    
 
     // WebGazer needs time to warm up
     console.log('⏳ Waiting for WebGazer to warm up...');
