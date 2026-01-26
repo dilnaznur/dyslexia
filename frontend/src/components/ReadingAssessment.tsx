@@ -58,19 +58,10 @@ async function initializeWebGazer(): Promise<void> {
     }
 
     console.log('⚙️ Configuring WebGazer...');
-    const webgazerAny = window.webgazer as any;
-
-    if (webgazerAny.params) {
-      webgazerAny.params.faceMeshConfig = {
-        locateFile: (file: string) => {
-          console.log('📦 Loading MediaPipe file:', file);
-          return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
-        }
-      };
-    }
+    
     await window.webgazer
       .setRegression('ridge')
-      .setTracker('TFFacemesh')
+      .setTracker('clmtrackr')
       .showPredictionPoints(true)
       .showVideo(true)
       .showFaceOverlay(false)
