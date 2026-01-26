@@ -44,7 +44,6 @@ export default function ReadingAssessment({
   const [calibrationIndex, setCalibrationIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-
   const gazePointsRef = useRef<GazePoint[]>([]);
   const startTimeRef = useRef<number>(0);
   const isWebGazerInitialized = useRef(false);

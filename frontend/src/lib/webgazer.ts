@@ -89,9 +89,6 @@ export function stopGazeTracking(): void {
 /**
  * Cleanup and end WebGazer session
  */
-/**
- * Cleanup and end WebGazer session
- */
 export function cleanupWebGazer(): void {
   try {
     console.log('🧹 Starting WebGazer cleanup...');
@@ -169,60 +166,6 @@ function cleanupWebGazerDOM(): void {
     console.log('✅ WebGazer DOM elements cleaned');
   } catch (err) {
     console.warn('⚠️ Error cleaning WebGazer DOM:', err);
-  }
-}
-
-/**
- * Remove WebGazer-created DOM elements
- */
-function cleanupWebGazerDOM(): void {
-  try {
-    // Remove WebGazer video elements
-    const selectors = [
-      '#webgazerVideoFeed',
-      '#webgazerFaceOverlay',
-      '#webgazerFaceFeedbackBox',
-      '#webgazerVideoCanvas',
-    ];
-
-    selectors.forEach(selector => {
-      const elements = document.querySelectorAll(selector);
-      elements.forEach(element => {
-        try {
-          if (element.parentNode) {
-            element.parentNode.removeChild(element);
-          }
-        } catch (err) {
-          // Element might already be removed
-        }
-      });
-    });
-
-    // Remove any orphaned WebGazer elements
-    document.querySelectorAll('video, canvas').forEach(element => {
-      const style = element.getAttribute('style') || '';
-      if (style.includes('position') && !element.id.startsWith('user-')) {
-        try {
-          if (element.tagName === 'VIDEO') {
-            const video = element as HTMLVideoElement;
-            const stream = video.srcObject as MediaStream;
-            if (stream) {
-              stream.getTracks().forEach(track => track.stop());
-            }
-            video.srcObject = null;
-          }
-          
-          if (element.parentNode) {
-            element.parentNode.removeChild(element);
-          }
-        } catch (err) {
-          // Ignore errors
-        }
-      }
-    });
-
-  } catch (err) {
-    console.warn('Error cleaning up WebGazer DOM:', err);
   }
 }
 
