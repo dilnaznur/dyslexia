@@ -1,20 +1,24 @@
 /**
  * Main App Component
  * Orchestrates the multi-stage dyslexia assessment workflow
+ * Now includes routing for the exercises section
  */
 import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, Eye, Pencil, MessageCircle, BarChart3 } from 'lucide-react';
+import { Brain, Eye, Pencil, MessageCircle, BarChart3, Gamepad2 } from 'lucide-react';
 import { DiagnosisProvider, useDiagnosis } from '@/context/DiagnosisProvider';
 import ReadingAssessment from '@/components/ReadingAssessment';
 import WritingAssessment from '@/components/WritingAssessment';
 import AIChatbot from '@/components/AIChatbot';
 import Dashboard from '@/components/Dashboard';
+import ExerciseHub from '@/components/exercises/ExerciseHub';
 import { ReadingMetrics, WritingAnalysis, ChatbotAnalysis } from '@/types';
 
 type AssessmentStep = 'welcome' | 'reading' | 'writing' | 'chatbot' | 'processing' | 'dashboard';
 
 function AppContent() {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<AssessmentStep>('welcome');
   const {
     setReadingData,
@@ -57,7 +61,7 @@ function AppContent() {
       // Wait a bit for dramatic effect
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      
+
 
       // Navigate to dashboard
       setCurrentStep('dashboard');
@@ -256,17 +260,32 @@ function AppContent() {
                 </div>
               </motion.div>
 
-              <motion.button
+              {/* Action Buttons */}
+              <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.6 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setCurrentStep('reading')}
-                className="bg-white hover:bg-gray-100 text-text-primary font-bold text-xl py-4 px-12 rounded-full shadow-lg transition-all"
+                className="flex flex-col sm:flex-row gap-4 justify-center items-center"
               >
-                Begin Assessment
-              </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setCurrentStep('reading')}
+                  className="bg-white hover:bg-gray-100 text-text-primary font-bold text-xl py-4 px-12 rounded-full shadow-lg transition-all"
+                >
+                  Begin Assessment
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/exercises')}
+                  className="bg-white/30 hover:bg-white/50 text-white font-bold text-lg py-3 px-8 rounded-full shadow-lg transition-all flex items-center gap-2 border-2 border-white/50"
+                >
+                  <Gamepad2 className="w-5 h-5" />
+                  Practice Exercises
+                </motion.button>
+              </motion.div>
 
               <motion.p
                 initial={{ opacity: 0 }}
@@ -392,10 +411,21 @@ function AppContent() {
   );
 }
 
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<AppContent />} />
+      <Route path="/exercises" element={<ExerciseHub />} />
+    </Routes>
+  );
+}
+
 export default function App() {
   return (
-    <DiagnosisProvider>
-      <AppContent />
-    </DiagnosisProvider>
+    <BrowserRouter>
+      <DiagnosisProvider>
+        <AppRoutes />
+      </DiagnosisProvider>
+    </BrowserRouter>
   );
 }

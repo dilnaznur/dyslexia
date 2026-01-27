@@ -1,8 +1,10 @@
 /**
  * Dashboard Component
  * Displays comprehensive dyslexia assessment results with visualizations
+ * Includes recommended exercises based on assessment results
  */
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Radar,
@@ -25,13 +27,51 @@ import {
   Book,
   Pencil,
   Brain,
+  Gamepad2,
+  ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 import { useDiagnosis } from '@/context/DiagnosisProvider';
 import confetti from 'canvas-confetti';
+import { ALL_EXERCISES } from '@/data/exercises';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { state } = useDiagnosis();
   const [countedScore, setCountedScore] = useState(0);
+
+  // Get recommended exercises based on risk score and weak areas
+  const getRecommendedExercises = () => {
+    const riskScore = state.final_score || 0;
+    const recommendations: string[] = [];
+
+    // High priority for higher risk scores
+    if (riskScore > 60) {
+      recommendations.push('letter-tracing', 'word-flash', 'mirror-detective');
+    } else if (riskScore > 40) {
+      recommendations.push('syllable-game', 'reading-tracker', 'odd-one-out');
+    } else {
+      recommendations.push('sequence-memory', 'sound-matching', 'reading-tracker');
+    }
+
+    // Add memory exercises if attention/memory scores are low
+    if (state.chatbot_data) {
+      if (state.chatbot_data.memory_score < 7) {
+        if (!recommendations.includes('sequence-memory')) {
+          recommendations.push('sequence-memory');
+        }
+      }
+      if (state.chatbot_data.attention_score < 7) {
+        if (!recommendations.includes('odd-one-out')) {
+          recommendations.push('odd-one-out');
+        }
+      }
+    }
+
+    return ALL_EXERCISES.filter((ex) => recommendations.includes(ex.id)).slice(0, 4);
+  };
+
+  const recommendedExercises = getRecommendedExercises();
 
   // Count-up animation for risk score
   useEffect(() => {
@@ -409,12 +449,88 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
+        {/* Recommended Exercises Section */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="glass-card p-8 mb-8"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-mint to-soft-blue rounded-full flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-text-primary">
+                  Recommended Exercises
+                </h3>
+                <p className="text-text-secondary">
+                  Based on your assessment results
+                </p>
+              </div>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/exercises')}
+              className="flex items-center gap-2 bg-mint hover:bg-green-400 text-white font-bold py-2 px-6 rounded-full transition-all"
+            >
+              <Gamepad2 className="w-5 h-5" />
+              View All
+              <ChevronRight className="w-4 h-4" />
+            </motion.button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {recommendedExercises.map((exercise, index) => (
+              <motion.button
+                key={exercise.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 + index * 0.1 }}
+                whileHover={{ scale: 1.03, y: -5 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => navigate('/exercises')}
+                className="bg-white/50 hover:bg-white/70 p-4 rounded-xl text-left transition-all group"
+              >
+                <div className="text-3xl mb-2">{exercise.emoji}</div>
+                <h4 className="font-bold text-text-primary group-hover:text-soft-blue transition-colors">
+                  {exercise.name}
+                </h4>
+                <p className="text-sm text-text-secondary line-clamp-2">
+                  {exercise.description}
+                </p>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    exercise.difficulty === 'Easy'
+                      ? 'bg-green-100 text-green-700'
+                      : exercise.difficulty === 'Medium'
+                      ? 'bg-yellow-100 text-yellow-700'
+                      : 'bg-red-100 text-red-700'
+                  }`}>
+                    {exercise.difficulty}
+                  </span>
+                  <span className="text-xs text-text-secondary">{exercise.duration}</span>
+                </div>
+              </motion.button>
+            ))}
+          </div>
+
+          <div className="mt-6 p-4 bg-pale-yellow/30 rounded-lg">
+            <p className="text-text-primary text-sm">
+              <strong>Tip:</strong> Regular practice with these exercises can help improve reading and writing skills.
+              We recommend 10-15 minutes of practice 3-4 times per week for best results.
+            </p>
+          </div>
+        </motion.div>
+
         {/* Action Buttons */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="flex gap-4 justify-center"
+          transition={{ delay: 0.7 }}
+          className="flex flex-wrap gap-4 justify-center"
         >
           <button className="flex items-center gap-2 bg-soft-blue hover:bg-blue-400 text-white font-bold py-3 px-8 rounded-full transition-transform hover:scale-105">
             <Download className="w-5 h-5" />
@@ -424,6 +540,15 @@ export default function Dashboard() {
             <FileText className="w-5 h-5" />
             Email Report
           </button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate('/exercises')}
+            className="flex items-center gap-2 bg-mint hover:bg-green-400 text-white font-bold py-3 px-8 rounded-full transition-all shadow-lg"
+          >
+            <Gamepad2 className="w-5 h-5" />
+            Start Practicing
+          </motion.button>
         </motion.div>
       </motion.div>
 
