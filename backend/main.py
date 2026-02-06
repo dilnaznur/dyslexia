@@ -368,7 +368,7 @@ async def gemini_proxy(request: dict):
             raise HTTPException(status_code=400, detail="Invalid request type")
 
         # Логируем URL который используем
-        api_url = f"{GEMINI_API_BASE}/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+        api_url = f"{GEMINI_API_BASE}/models/gemini-3-flash-preview:generateContent?key={GEMINI_API_KEY}"
         logger.info(f"Calling Gemini API: {api_url[:80]}...")  # Показываем начало URL
         
         async with httpx.AsyncClient() as client:
