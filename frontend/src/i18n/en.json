@@ -1,0 +1,218 @@
+{
+  "app": {
+    "title": "MindStep",
+    "subtitle": "Early Dyslexia Detection Platform",
+    "whatToExpect": "What to Expect",
+    "beginAssessment": "Begin Assessment",
+    "practiceExercises": "Practice Exercises",
+    "totalTime": "Total time: ~10-15 minutes • 100% confidential • Suitable for ages 5-10"
+  },
+  "steps": {
+    "reading": "Reading",
+    "writing": "Writing",
+    "chat": "Chat",
+    "results": "Results"
+  },
+  "welcome": {
+    "readingTitle": "Reading Assessment",
+    "readingDesc": "Read a short story while we track your eye movements (2-3 min)",
+    "writingTitle": "Writing Assessment",
+    "writingDesc": "Write a few simple words using your mouse or touchscreen (2-3 min)",
+    "chatTitle": "Chat Assessment",
+    "chatDesc": "Have a friendly conversation with our AI assistant (3-5 min)",
+    "resultsTitle": "Get Your Results",
+    "resultsDesc": "Receive detailed insights and personalized recommendations"
+  },
+  "processing": {
+    "title": "Analyzing Your Results...",
+    "subtitle": "Our AI is processing your assessment data"
+  },
+  "reading": {
+    "modalTitle": "Reading Assessment with Eye Tracking",
+    "modalDesc": "We'll track your eye movements while you read a short story. This helps us understand your reading patterns.",
+    "modalInstructions": "First, you'll calibrate the eye tracker by clicking on dots that appear on the screen. Then, read the story at your normal pace.",
+    "startAssessment": "Start Assessment",
+    "starting": "Starting…",
+    "skipStep": "Skip this step",
+    "calibrationTitle": "Click on the red circle",
+    "calibrationPoint": "Point {{current}} of {{total}}",
+    "readingProgress": "Reading Progress",
+    "doneReading": "I'm Done Reading",
+    "completeTitle": "Great Job! 🎉",
+    "completeDesc": "Reading assessment complete. Analyzing your eye movements...",
+    "readingText": "Once upon a time, there was a clever fox who lived in a beautiful forest. The fox loved to explore and find new adventures every day. One sunny morning, the fox discovered a sparkling stream with crystal clear water. Many colorful fish swam happily in the stream. The fox made friends with a wise old owl who lived in a tall oak tree. Together, they explored the magical forest and helped other animals. They found hidden treasures and solved interesting puzzles. The fox learned that friendship and kindness are the most valuable treasures of all."
+  },
+  "writing": {
+    "modalTitle": "Handwriting Assessment",
+    "modalDesc": "We'll ask you to write a few simple words. This helps us analyze your handwriting patterns.",
+    "modalInstructions": "Use your mouse or finger (on touchscreen) to write on the canvas. Take your time and write naturally.",
+    "startWriting": "✏️ Start Writing",
+    "skipStep": "Skip this step",
+    "undo": "Undo",
+    "clear": "Clear",
+    "submit": "Submit",
+    "strokesRecorded": "Strokes recorded: {{count}}",
+    "analyzingTitle": "Analyzing Handwriting...",
+    "analyzingDesc": "Using AI to analyze your handwriting patterns.",
+    "completeTitle": "Analysis Complete! 🎨",
+    "completeDesc": "Great handwriting! Moving to the next assessment...",
+    "prompts": ["Write the word: CAT", "Write the word: BALL", "Write the word: TREE"]
+  },
+  "chatbot": {
+    "modalTitle": "Let's Play a Fun Game!",
+    "modalDesc": "I'll ask you a few easy questions. There are no wrong answers — just do your best and have fun!",
+    "modalInstructions": "Listen to each question (you can press the speaker button to hear it again) and type your answer. This takes about 2 minutes!",
+    "startBtn": "🚀 Start!",
+    "skipStep": "Skip this step",
+    "buddyName": "MindStep Buddy",
+    "questionOf": "Question {{current}} of {{total}}",
+    "typePlaceholder": "Type your answer here...",
+    "muteAudio": "Mute audio",
+    "enableAudio": "Enable audio",
+    "listenMsg": "Listen to this message",
+    "labels": {
+      "memoryPrime": "Memory Prime",
+      "phonological": "Phonological Awareness",
+      "attention": "Attention",
+      "storyComprehension": "Story Comprehension",
+      "delayedRecall": "Delayed Memory Recall"
+    },
+    "questions": {
+      "q1": "Hi! Can you remember these 3 words? Cat, Ball, Tree. Say them back to me!",
+      "q2": "Great! Which word rhymes with 'cat'?",
+      "q3": "Nice! What color is the sky on a sunny day?",
+      "q4": "Let me tell you a short story! 'Emma had a red ball. She threw it to her dog Max. Max caught it and ran to the tree.' Who caught the ball?",
+      "q5": "You're doing great! Do you remember those 3 words from the beginning? What were they?"
+    },
+    "memoryWords": ["cat", "ball", "tree"],
+    "correctRhyme": "hat",
+    "correctColor": "blue",
+    "correctStoryAnswers": ["max", "dog"],
+    "options": {
+      "q2": [
+        { "emoji": "🐕", "label": "dog", "value": "dog" },
+        { "emoji": "🎩", "label": "hat", "value": "hat" },
+        { "emoji": "🚗", "label": "car", "value": "car" }
+      ],
+      "q3": [
+        { "emoji": "🔴", "label": "red", "value": "red" },
+        { "emoji": "🔵", "label": "blue", "value": "blue" },
+        { "emoji": "🟢", "label": "green", "value": "green" }
+      ]
+    },
+    "encouragements": {
+      "e1": "Great job remembering!",
+      "e2": "You're doing amazing!",
+      "e3": "Wonderful answer!",
+      "e4": "You're a great listener!",
+      "e5": "Awesome memory! You're a superstar!"
+    },
+    "results": {
+      "amazingWork": "Amazing Work!",
+      "completedAll": "You completed all the questions! Here's how you did:",
+      "memorySkills": "🧠 Memory Skills",
+      "memoryDesc": "How well your child remembers information",
+      "memoryDetail": "Tested with word recall (immediate & delayed). These skills are essential for learning to read — children must remember letter sounds and sight words.",
+      "attentionSkills": "👁️ Attention Skills",
+      "attentionDesc": "How well your child focuses on questions",
+      "attentionDetail": "Tested with a general knowledge question requiring focused thinking. Attention difficulties can make reading feel exhausting.",
+      "comprehensionSkills": "📖 Comprehension Skills",
+      "comprehensionDesc": "How well your child understands language",
+      "comprehensionDetail": "Tested with rhyming (phonological awareness) and story comprehension. Both are strong predictors of reading ability.",
+      "overallRiskLevel": "Overall Cognitive Risk Level",
+      "riskLow": "Low",
+      "riskModerate": "Moderate",
+      "riskHigh": "High",
+      "lowRiskMsg": "✅ Your child performed well across all cognitive areas tested. Continue with regular reading activities and check back in 6 months.",
+      "moderateRiskMsg1": "⚠️ Some areas scored below the expected range. This doesn't mean there's a problem — many factors can affect performance.",
+      "moderateRiskMsg2": "Recommended: Try the suggested exercises in the Exercise Hub, and consider a follow-up assessment in 3 months.",
+      "highRiskMsg1": "🔴 One or more areas scored significantly below average. This may indicate areas where your child could benefit from additional support.",
+      "highRiskMsg2": "Recommended: Consult with an educational psychologist or learning specialist for a comprehensive evaluation. Use the Exercise Hub for targeted practice in the meantime.",
+      "whatTested": "📋 What Was Tested & Why",
+      "testedMemory": "Questions 1 & 5 — Memory",
+      "testedMemoryDesc": "Your child was asked to remember three words at the start and recall them later. Working memory is crucial for reading — children must hold letters and sounds in mind while decoding words.",
+      "testedPhonological": "Question 2 — Phonological Awareness",
+      "testedPhonologicalDesc": "A rhyming task tested awareness of word sounds. Difficulty with rhyming is one of the earliest indicators of dyslexia.",
+      "testedAttention": "Question 3 — Attention",
+      "testedAttentionDesc": "A simple factual question assessed whether your child was focused and engaged. Attention challenges can amplify reading difficulties.",
+      "testedStory": "Question 4 — Story Comprehension",
+      "testedStoryDesc": "Listening to a short story and answering a question tested language processing. Comprehension difficulties may signal deeper decoding issues.",
+      "scoreNote": "This chatbot assessment contributes 20% to the overall MindStep diagnosis score, combined with eye-tracking (45% + 10%) and handwriting analysis (25%).",
+      "continueToResults": "Continue to Results →"
+    },
+    "complete": {
+      "title": "All Done — Great Job!",
+      "subtitle": "Your answers have been recorded. Moving to final results..."
+    }
+  },
+  "dashboard": {
+    "title": "Assessment Results",
+    "subtitle": "Comprehensive Dyslexia Screening Report",
+    "overallRisk": "Overall Risk Assessment",
+    "riskScore": "Risk Score",
+    "confidence": "Confidence",
+    "analyzingResults": "Analyzing results...",
+    "cognitiveProfile": "Cognitive Profile",
+    "keyDiagnosticFactors": "Key Diagnostic Factors",
+    "whyThisResult": "Why This Result?",
+    "primaryIndicators": "Primary Indicators",
+    "readingLabel": "Reading",
+    "writingLabel": "Writing",
+    "behavioralLabel": "Behavioral",
+    "noSignificantIssues": "No significant issues",
+    "recommendation": "Recommendation",
+    "recommendedExercises": "Recommended Exercises",
+    "basedOnResults": "Based on your assessment results",
+    "viewAll": "View All",
+    "startPracticing": "Start Practicing",
+    "downloadPDF": "Download PDF Report",
+    "exerciseTip": "Tip: Regular practice with these exercises can help improve reading and writing skills. We recommend 10-15 minutes of practice 3-4 times per week for best results.",
+    "radarMetrics": {
+      "reading": "Reading",
+      "eyeTracking": "Eye Tracking",
+      "handwriting": "Handwriting",
+      "memory": "Memory",
+      "attention": "Attention"
+    },
+    "featureNames": {
+      "fixationDuration": "Fixation Duration",
+      "entropy": "Entropy",
+      "autocorrelation": "Autocorrelation",
+      "tviScore": "TVI Score"
+    }
+  },
+  "pdf": {
+    "title": "MindStep — Dyslexia Screening Report",
+    "date": "Date",
+    "overallRisk": "Overall Risk Assessment",
+    "finalRiskScore": "Final Risk Score",
+    "classification": "Classification",
+    "confidence": "Confidence",
+    "cognitiveAssessment": "Cognitive Assessment (Chatbot)",
+    "memoryScore": "Memory Score",
+    "attentionScore": "Attention Score",
+    "comprehensionScore": "Comprehension Score",
+    "cognitiveRisk": "Cognitive Risk",
+    "chatbotNotCompleted": "Chatbot assessment was not completed.",
+    "eyeTrackingAnalysis": "Eye-Tracking Analysis",
+    "riskScoreLabel": "Risk Score",
+    "modelConfidence": "Model Confidence",
+    "eyeTrackingNotAvailable": "Eye-tracking data was not available.",
+    "handwritingAnalysis": "Handwriting Analysis",
+    "strokeCount": "Stroke Count",
+    "avgStrokeSpeed": "Average Stroke Speed",
+    "handwritingNotCompleted": "Handwriting assessment was not completed.",
+    "recommendations": "Recommendations",
+    "keyIndicators": "Key Indicators",
+    "disclaimer": "This is a screening tool, not a clinical diagnosis. Please consult a qualified professional for comprehensive evaluation."
+  },
+  "modal": {
+    "close": "Close"
+  },
+  "common": {
+    "skipStep": "Skip this step",
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard"
+  }
+}

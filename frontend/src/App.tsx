@@ -7,18 +7,21 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, Eye, Pencil, MessageCircle, BarChart3, Gamepad2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { DiagnosisProvider, useDiagnosis } from '@/context/DiagnosisProvider';
 import ReadingAssessment from '@/components/ReadingAssessment';
 import WritingAssessment from '@/components/WritingAssessment';
 import AIChatbot from '@/components/AIChatbot';
 import Dashboard from '@/components/Dashboard';
 import ExerciseHub from '@/components/exercises/ExerciseHub';
+import LanguageSelector from '@/components/LanguageSelector';
 import { ReadingMetrics, WritingAnalysis, ChatbotAnalysis } from '@/types';
 
 type AssessmentStep = 'welcome' | 'reading' | 'writing' | 'chatbot' | 'processing' | 'dashboard';
 
 function AppContent() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState<AssessmentStep>('welcome');
   const {
     setReadingData,
@@ -74,10 +77,10 @@ function AppContent() {
   };
 
   const steps = [
-    { id: 'reading', label: 'Reading', icon: Eye, color: 'soft-blue' },
-    { id: 'writing', label: 'Writing', icon: Pencil, color: 'lavender' },
-    { id: 'chatbot', label: 'Chat', icon: MessageCircle, color: 'pale-yellow' },
-    { id: 'dashboard', label: 'Results', icon: BarChart3, color: 'mint' },
+    { id: 'reading', label: t('steps.reading'), icon: Eye, color: 'soft-blue' },
+    { id: 'writing', label: t('steps.writing'), icon: Pencil, color: 'lavender' },
+    { id: 'chatbot', label: t('steps.chat'), icon: MessageCircle, color: 'pale-yellow' },
+    { id: 'dashboard', label: t('steps.results'), icon: BarChart3, color: 'mint' },
   ];
 
   const getCurrentStepIndex = () => {
@@ -98,6 +101,11 @@ function AppContent() {
 
   return (
     <div className="min-h-screen">
+      {/* Global language selector – always visible */}
+      <div className="fixed top-4 right-4" style={{ zIndex: 1100 }}>
+        <LanguageSelector />
+      </div>
+
       {/* Progress Steps (hidden on welcome and dashboard) */}
       {currentStep !== 'welcome' && currentStep !== 'dashboard' && (
         <div className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-sm shadow-md z-50">
@@ -180,7 +188,7 @@ function AppContent() {
                 transition={{ delay: 0.3 }}
                 className="text-6xl font-bold text-white mb-4 drop-shadow-md"
               >
-                MindStep
+                {t('app.title')}
               </motion.h1>
 
               <motion.p
@@ -189,7 +197,7 @@ function AppContent() {
                 transition={{ delay: 0.4 }}
                 className="text-2xl text-white/90 mb-12 leading-relaxed"
               >
-                Early Dyslexia Detection Platform
+                {t('app.subtitle')}
               </motion.p>
 
               <motion.div
@@ -199,7 +207,7 @@ function AppContent() {
                 className="glass-card p-8 mb-8 text-left max-w-2xl mx-auto"
               >
                 <h2 className="text-2xl font-bold text-text-primary mb-4">
-                  What to Expect
+                  {t('app.whatToExpect')}
                 </h2>
                 <div className="space-y-4">
                   <div className="flex items-start gap-4">
@@ -208,10 +216,10 @@ function AppContent() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-text-primary">
-                        Reading Assessment
+                        {t('welcome.readingTitle')}
                       </h3>
                       <p className="text-text-secondary">
-                        Read a short story while we track your eye movements (2-3 min)
+                        {t('welcome.readingDesc')}
                       </p>
                     </div>
                   </div>
@@ -222,10 +230,10 @@ function AppContent() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-text-primary">
-                        Writing Assessment
+                        {t('welcome.writingTitle')}
                       </h3>
                       <p className="text-text-secondary">
-                        Write a few simple words using your mouse or touchscreen (2-3 min)
+                        {t('welcome.writingDesc')}
                       </p>
                     </div>
                   </div>
@@ -236,10 +244,10 @@ function AppContent() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-text-primary">
-                        Chat Assessment
+                        {t('welcome.chatTitle')}
                       </h3>
                       <p className="text-text-secondary">
-                        Have a friendly conversation with our AI assistant (3-5 min)
+                        {t('welcome.chatDesc')}
                       </p>
                     </div>
                   </div>
@@ -250,10 +258,10 @@ function AppContent() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-text-primary">
-                        Get Your Results
+                        {t('welcome.resultsTitle')}
                       </h3>
                       <p className="text-text-secondary">
-                        Receive detailed insights and personalized recommendations
+                        {t('welcome.resultsDesc')}
                       </p>
                     </div>
                   </div>
@@ -273,7 +281,7 @@ function AppContent() {
                   onClick={() => setCurrentStep('reading')}
                   className="bg-white hover:bg-gray-100 text-text-primary font-bold text-xl py-4 px-12 rounded-full shadow-lg transition-all"
                 >
-                  Begin Assessment
+                  {t('app.beginAssessment')}
                 </motion.button>
 
                 <motion.button
@@ -283,7 +291,7 @@ function AppContent() {
                   className="bg-white/30 hover:bg-white/50 text-white font-bold text-lg py-3 px-8 rounded-full shadow-lg transition-all flex items-center gap-2 border-2 border-white/50"
                 >
                   <Gamepad2 className="w-5 h-5" />
-                  Practice Exercises
+                  {t('app.practiceExercises')}
                 </motion.button>
               </motion.div>
 
@@ -293,7 +301,7 @@ function AppContent() {
                 transition={{ delay: 0.8 }}
                 className="mt-6 text-white/70 text-sm"
               >
-                Total time: ~10-15 minutes • 100% confidential • Suitable for ages 5-10
+                {t('app.totalTime')}
               </motion.p>
             </div>
           </motion.div>
@@ -359,10 +367,10 @@ function AppContent() {
                 <Brain className="w-20 h-20 text-white" />
               </motion.div>
               <h2 className="text-3xl font-bold text-white mb-4">
-                Analyzing Your Results...
+                {t('processing.title')}
               </h2>
               <p className="text-white/80 text-lg">
-                Our AI is processing your assessment data
+                {t('processing.subtitle')}
               </p>
               <div className="flex gap-2 justify-center mt-6">
                 {[0, 1, 2].map((i) => (

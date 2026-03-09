@@ -7,6 +7,8 @@ import { motion } from 'framer-motion';
 import { Pencil, Undo, Trash2, Send, Loader } from 'lucide-react';
 import { analyzeHandwriting } from '@/lib/gemini';
 import { WritingAnalysis, Stroke } from '@/types';
+import InstructionModal from './InstructionModal';
+import { useTranslation } from 'react-i18next';
 
 interface WritingAssessmentProps {
   onComplete: (analysis: WritingAnalysis) => void;
@@ -23,6 +25,9 @@ export default function WritingAssessment({
   onComplete,
   onSkip,
 }: WritingAssessmentProps) {
+  const { t } = useTranslation();
+  const prompts: string[] = t('writing.prompts', { returnObjects: true }) as unknown as string[];
+
   const [phase, setPhase] = useState<'intro' | 'drawing' | 'analyzing' | 'complete'>('intro');
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
   const [strokes, setStrokes] = useState<Stroke[]>([]);
@@ -241,52 +246,31 @@ export default function WritingAssessment({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-lavender to-peach p-8">
+    <div className="min-h-screen bg-gradient-to-br from-lavender to-peach p-8 pt-24">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="max-w-4xl mx-auto"
       >
-        {/* Intro Phase */}
-        {phase === 'intro' && (
-          <div className="glass-card p-8 text-center">
-            <Pencil className="w-16 h-16 mx-auto mb-4 text-lavender" />
-            <h2 className="text-2xl font-bold mb-4 text-text-primary">
-              Handwriting Assessment
-            </h2>
-            <p className="text-lg mb-6 text-text-secondary leading-relaxed">
-              We'll ask you to write a few simple words. This helps us analyze
-              your handwriting patterns.
-            </p>
-            <div className="bg-pale-yellow p-4 rounded-lg mb-6">
-              <p className="text-base">
-                <strong>What to do:</strong> Use your mouse or finger (on
-                touchscreen) to write on the canvas. Take your time and write
-                naturally.
-              </p>
-            </div>
-            <button
-              onClick={() => setPhase('drawing')}
-              className="bg-lavender hover:bg-purple-400 text-white font-bold py-3 px-8 rounded-full transition-transform hover:scale-105"
-            >
-              Start Writing
-            </button>
-            {onSkip && (
-              <button
-                onClick={onSkip}
-                className="ml-4 text-text-secondary hover:text-text-primary underline"
-              >
-                Skip this step
-              </button>
-            )}
-          </div>
-        )}
+        {/* Intro Phase – centered modal */}
+        <InstructionModal
+          open={phase === 'intro'}
+          icon={<Pencil className="w-16 h-16 text-purple-400" />}
+          title={t('writing.modalTitle')}
+          description={t('writing.modalDesc')}
+          instructions={t('writing.modalInstructions')}
+          actionLabel={t('writing.startWriting')}
+          onAction={() => setPhase('drawing')}
+          onClose={() => onSkip?.()}
+          onSkip={onSkip}
+          actionGradient="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+        />
 
         {/* Drawing Phase */}
         {phase === 'drawing' && (
           <div className="glass-card p-8">
             <h3 className="text-xl font-bold mb-4 text-center text-text-primary">
-              {WRITING_PROMPTS[currentPromptIndex]}
+              {prompts[currentPromptIndex] || WRITING_PROMPTS[currentPromptIndex]}
             </h3>
 
             <div className="bg-white rounded-lg p-4 mb-4 border-4 border-dashed border-gray-300">
@@ -311,7 +295,7 @@ export default function WritingAssessment({
                 className="flex items-center gap-2 bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed text-gray-800 font-bold py-2 px-6 rounded-full transition"
               >
                 <Undo className="w-5 h-5" />
-                Undo
+                {t('writing.undo')}
               </button>
 
               <button
@@ -320,7 +304,7 @@ export default function WritingAssessment({
                 className="flex items-center gap-2 bg-red-300 hover:bg-red-400 disabled:bg-gray-200 disabled:cursor-not-allowed text-gray-800 font-bold py-2 px-6 rounded-full transition"
               >
                 <Trash2 className="w-5 h-5" />
-                Clear
+                {t('writing.clear')}
               </button>
 
               <button
@@ -329,12 +313,12 @@ export default function WritingAssessment({
                 className="flex items-center gap-2 bg-mint hover:bg-green-400 disabled:bg-gray-200 disabled:cursor-not-allowed text-white font-bold py-2 px-6 rounded-full transition"
               >
                 <Send className="w-5 h-5" />
-                Submit
+                {t('writing.submit')}
               </button>
             </div>
 
             <p className="text-center text-text-secondary text-sm">
-              Strokes recorded: {strokes.length}
+              {t('writing.strokesRecorded', { count: strokes.length })}
             </p>
           </div>
         )}
@@ -344,10 +328,10 @@ export default function WritingAssessment({
           <div className="glass-card p-8 text-center">
             <Loader className="w-16 h-16 mx-auto mb-4 text-lavender animate-spin" />
             <h2 className="text-2xl font-bold mb-4 text-text-primary">
-              Analyzing Handwriting...
+              {t('writing.analyzingTitle')}
             </h2>
             <p className="text-lg text-text-secondary">
-              Using AI to analyze your handwriting patterns.
+              {t('writing.analyzingDesc')}
             </p>
           </div>
         )}
@@ -368,10 +352,10 @@ export default function WritingAssessment({
               ✓
             </motion.div>
             <h2 className="text-2xl font-bold mb-4 text-text-primary">
-              Analysis Complete! 🎨
+              {t('writing.completeTitle')}
             </h2>
             <p className="text-lg text-text-secondary">
-              Great handwriting! Moving to the next assessment...
+              {t('writing.completeDesc')}
             </p>
           </motion.div>
         )}

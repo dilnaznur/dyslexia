@@ -22,7 +22,6 @@ import {
 import {
   AlertCircle,
   CheckCircle,
-  FileText,
   Download,
   Book,
   Pencil,
@@ -34,11 +33,14 @@ import {
 import { useDiagnosis } from '@/context/DiagnosisProvider';
 import confetti from 'canvas-confetti';
 import { ALL_EXERCISES } from '@/data/exercises';
+import jsPDF from 'jspdf';
+import { useTranslation } from 'react-i18next';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { state } = useDiagnosis();
   const [countedScore, setCountedScore] = useState(0);
+  const { t } = useTranslation();
 
   // Get recommended exercises based on risk score and weak areas
   const getRecommendedExercises = () => {
@@ -105,6 +107,118 @@ export default function Dashboard() {
     return;
   }, [state.final_score]);
 
+  // ====== PDF Report Generation ======
+  const generatePDFReport = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Title
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.text(t('pdf.title'), pageWidth / 2, 22, { align: 'center' });
+
+    // Date
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${t('pdf.date')}: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, 20, 34);
+
+    // Divider
+    doc.setDrawColor(99, 102, 241);
+    doc.setLineWidth(0.7);
+    doc.line(20, 38, pageWidth - 20, 38);
+
+    // Overall Score
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(t('pdf.overallRisk'), 20, 50);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${t('pdf.finalRiskScore')}: ${Math.round(state.final_score || 0)} / 100`, 28, 60);
+    doc.text(`${t('pdf.classification')}: ${state.final_classification || 'N/A'}`, 28, 68);
+    doc.text(`${t('pdf.confidence')}: ${((state.combined_explanation?.confidence || 0) * 100).toFixed(1)}%`, 28, 76);
+
+    // Chatbot / Cognitive Scores
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(t('pdf.cognitiveAssessment'), 20, 92);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    if (state.chatbot_data) {
+      doc.text(`${t('pdf.memoryScore')}: ${state.chatbot_data.memory_score.toFixed(1)} / 10`, 28, 102);
+      doc.text(`${t('pdf.attentionScore')}: ${state.chatbot_data.attention_score.toFixed(1)} / 10`, 28, 110);
+      doc.text(`${t('pdf.comprehensionScore')}: ${state.chatbot_data.comprehension_score.toFixed(1)} / 10`, 28, 118);
+      doc.text(`${t('pdf.cognitiveRisk')}: ${state.chatbot_data.overall_cognitive_risk}`, 28, 126);
+    } else {
+      doc.text(t('pdf.chatbotNotCompleted'), 28, 102);
+    }
+
+    // Eye-tracking
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(t('pdf.eyeTrackingAnalysis'), 20, 142);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    if (state.backend_prediction) {
+      doc.text(`${t('pdf.riskScoreLabel')}: ${state.backend_prediction.risk_score.toFixed(1)} / 100`, 28, 152);
+      doc.text(`${t('pdf.classification')}: ${state.backend_prediction.classification}`, 28, 160);
+      doc.text(`${t('pdf.modelConfidence')}: ${(state.backend_prediction.confidence * 100).toFixed(1)}%`, 28, 168);
+    } else {
+      doc.text(t('pdf.eyeTrackingNotAvailable'), 28, 152);
+    }
+
+    // Handwriting
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(t('pdf.handwritingAnalysis'), 20, 184);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    if (state.writing_data) {
+      doc.text(`${t('pdf.strokeCount')}: ${state.writing_data.stroke_count}`, 28, 194);
+      doc.text(`${t('pdf.avgStrokeSpeed')}: ${state.writing_data.avg_stroke_speed.toFixed(1)}`, 28, 202);
+    } else {
+      doc.text(t('pdf.handwritingNotCompleted'), 28, 194);
+    }
+
+    // Recommendation
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(t('pdf.recommendations'), 20, 220);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    const rec = state.combined_explanation?.recommendation || '';
+    const recLines = doc.splitTextToSize(rec, pageWidth - 50);
+    doc.text(recLines, 28, 230);
+
+    // Primary indicators
+    const indicators = state.combined_explanation?.primary_factors || [];
+    if (indicators.length > 0) {
+      let y = 230 + recLines.length * 6 + 14;
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text(t('pdf.keyIndicators'), 20, y);
+      y += 8;
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      indicators.forEach((ind: string) => {
+        const lines = doc.splitTextToSize(`• ${ind}`, pageWidth - 50);
+        doc.text(lines, 28, y);
+        y += lines.length * 6 + 2;
+      });
+    }
+
+    // Footer
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'italic');
+    doc.text(
+      t('pdf.disclaimer'),
+      pageWidth / 2,
+      285,
+      { align: 'center' }
+    );
+
+    doc.save('MindStep_Report.pdf');
+  };
+
   if (!state.final_score || !state.combined_explanation) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-mint to-soft-blue flex items-center justify-center">
@@ -116,7 +230,7 @@ export default function Dashboard() {
           >
             <Brain className="w-16 h-16 text-white" />
           </motion.div>
-          <p className="mt-4 text-xl text-white">Analyzing results...</p>
+          <p className="mt-4 text-xl text-white">{t('dashboard.analyzingResults')}</p>
         </div>
       </div>
     );
@@ -134,33 +248,33 @@ export default function Dashboard() {
   // Prepare radar chart data
   const radarData = [
     {
-      metric: 'Reading',
+      metric: t('dashboard.radarMetrics.reading'),
       value: state.backend_prediction
         ? 100 - state.backend_prediction.risk_score
         : 50,
       fullMark: 100,
     },
     {
-      metric: 'Eye Tracking',
+      metric: t('dashboard.radarMetrics.eyeTracking'),
       value: state.reading_data?.regression_index
         ? (1 - state.reading_data.regression_index) * 100
         : 50,
       fullMark: 100,
     },
     {
-      metric: 'Handwriting',
+      metric: t('dashboard.radarMetrics.handwriting'),
       value: state.writing_data
   ? 70  // Default score since gemini_response is string, not object
   : 50,
       fullMark: 100,
     },
     {
-      metric: 'Memory',
+      metric: t('dashboard.radarMetrics.memory'),
       value: state.chatbot_data ? state.chatbot_data.memory_score * 10 : 50,
       fullMark: 100,
     },
     {
-      metric: 'Attention',
+      metric: t('dashboard.radarMetrics.attention'),
       value: state.chatbot_data ? state.chatbot_data.attention_score * 10 : 50,
       fullMark: 100,
     },
@@ -170,21 +284,21 @@ export default function Dashboard() {
   const featureImportanceData = state.backend_prediction
     ? [
         {
-          name: 'Fixation Duration',
+          name: t('dashboard.featureNames.fixationDuration'),
           value: parseFloat(
             (state.backend_prediction.explanation.feature_importance
               .mean_fixation_duration / 500).toFixed(2)
           ),
         },
         {
-          name: 'Entropy',
+          name: t('dashboard.featureNames.entropy'),
           value: parseFloat(
             (state.backend_prediction.explanation.feature_importance
               .entropy_fixation_duration / 3).toFixed(2)
           ),
         },
         {
-          name: 'Autocorrelation',
+          name: t('dashboard.featureNames.autocorrelation'),
           value: Math.abs(
             parseFloat(
               (state.backend_prediction.explanation.feature_importance
@@ -193,7 +307,7 @@ export default function Dashboard() {
           ),
         },
         {
-          name: 'TVI Score',
+          name: t('dashboard.featureNames.tviScore'),
           value: parseFloat(
             (state.backend_prediction.explanation.feature_importance
               .weighted_tvi_score / 15).toFixed(2)
@@ -216,10 +330,10 @@ export default function Dashboard() {
           className="text-center mb-12"
         >
           <h1 className="text-4xl font-bold text-white mb-2">
-            Assessment Results
+            {t('dashboard.title')}
           </h1>
           <p className="text-white/80 text-lg">
-            Comprehensive Dyslexia Screening Report
+            {t('dashboard.subtitle')}
           </p>
         </motion.div>
 
@@ -231,7 +345,7 @@ export default function Dashboard() {
           className="glass-card p-8 mb-8 text-center"
         >
           <h2 className="text-2xl font-bold text-text-primary mb-6">
-            Overall Risk Assessment
+            {t('dashboard.overallRisk')}
           </h2>
 
           {/* Circular Gauge */}
@@ -272,7 +386,7 @@ export default function Dashboard() {
               <span className="text-5xl font-bold text-text-primary">
                 {Math.round(countedScore)}
               </span>
-              <span className="text-sm text-text-secondary">Risk Score</span>
+              <span className="text-sm text-text-secondary">{t('dashboard.riskScore')}</span>
             </div>
           </div>
 
@@ -283,7 +397,7 @@ export default function Dashboard() {
           </div>
 
           <p className="mt-4 text-text-secondary">
-            Confidence: {(state.combined_explanation.confidence * 100).toFixed(1)}%
+            {t('dashboard.confidence')}: {(state.combined_explanation.confidence * 100).toFixed(1)}%
           </p>
         </motion.div>
 
@@ -297,22 +411,24 @@ export default function Dashboard() {
             className="glass-card p-6"
           >
             <h3 className="text-xl font-bold text-text-primary mb-4">
-              Cognitive Profile
+              {t('dashboard.cognitiveProfile')}
             </h3>
             <ResponsiveContainer width="100%" height={300}>
               <RadarChart data={radarData}>
-                <PolarGrid stroke="#CBD5E1" />
+                <PolarGrid stroke="rgba(0,0,0,0.1)" />
                 <PolarAngleAxis
                   dataKey="metric"
-                  tick={{ fill: '#64748B', fontSize: 14 }}
+                  tick={{ fill: '#334155', fontSize: 14, fontWeight: 600 }}
                 />
-                <PolarRadiusAxis angle={90} domain={[0, 100]} />
+                <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 11 }} />
                 <Radar
                   name="Performance"
                   dataKey="value"
-                  stroke="#A8E6CF"
-                  fill="#A8E6CF"
-                  fillOpacity={0.6}
+                  stroke="#6366F1"
+                  fill="#6366F1"
+                  fillOpacity={0.3}
+                  strokeWidth={3}
+                  dot={{ r: 5, fill: '#6366F1', stroke: '#fff', strokeWidth: 2 }}
                 />
               </RadarChart>
             </ResponsiveContainer>
@@ -326,7 +442,7 @@ export default function Dashboard() {
             className="glass-card p-6"
           >
             <h3 className="text-xl font-bold text-text-primary mb-4">
-              Key Diagnostic Factors
+              {t('dashboard.keyDiagnosticFactors')}
             </h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={featureImportanceData}>
@@ -353,13 +469,13 @@ export default function Dashboard() {
           className="glass-card p-8 mb-8"
         >
           <h3 className="text-2xl font-bold text-text-primary mb-6">
-            Why This Result?
+            {t('dashboard.whyThisResult')}
           </h3>
 
           {/* Primary Indicators */}
           <div className="mb-6">
             <h4 className="text-lg font-semibold text-text-primary mb-3">
-              Primary Indicators
+              {t('dashboard.primaryIndicators')}
             </h4>
             <div className="space-y-2">
               {state.combined_explanation.primary_factors.map((factor, index) => (
@@ -383,7 +499,7 @@ export default function Dashboard() {
             <div className="bg-soft-blue/20 p-4 rounded-lg">
               <div className="flex items-center gap-2 mb-3">
                 <Book className="w-5 h-5 text-soft-blue" />
-                <h5 className="font-semibold text-text-primary">Reading</h5>
+                <h5 className="font-semibold text-text-primary">{t('dashboard.readingLabel')}</h5>
               </div>
               <ul className="space-y-1 text-sm text-text-secondary">
                 {state.combined_explanation.detailed_breakdown.reading.map(
@@ -398,7 +514,7 @@ export default function Dashboard() {
             <div className="bg-lavender/20 p-4 rounded-lg">
               <div className="flex items-center gap-2 mb-3">
                 <Pencil className="w-5 h-5 text-lavender" />
-                <h5 className="font-semibold text-text-primary">Writing</h5>
+                <h5 className="font-semibold text-text-primary">{t('dashboard.writingLabel')}</h5>
               </div>
               <ul className="space-y-1 text-sm text-text-secondary">
                 {state.combined_explanation.detailed_breakdown.writing.map(
@@ -408,7 +524,7 @@ export default function Dashboard() {
                 )}
                 {state.combined_explanation.detailed_breakdown.writing
                   .length === 0 && (
-                  <li className="text-green-600">• No significant issues</li>
+                  <li className="text-green-600">• {t('dashboard.noSignificantIssues')}</li>
                 )}
               </ul>
             </div>
@@ -417,7 +533,7 @@ export default function Dashboard() {
             <div className="bg-pale-yellow/20 p-4 rounded-lg">
               <div className="flex items-center gap-2 mb-3">
                 <Brain className="w-5 h-5 text-yellow-600" />
-                <h5 className="font-semibold text-text-primary">Behavioral</h5>
+                <h5 className="font-semibold text-text-primary">{t('dashboard.behavioralLabel')}</h5>
               </div>
               <ul className="space-y-1 text-sm text-text-secondary">
                 {state.combined_explanation.detailed_breakdown.behavioral.map(
@@ -427,7 +543,7 @@ export default function Dashboard() {
                 )}
                 {state.combined_explanation.detailed_breakdown.behavioral
                   .length === 0 && (
-                  <li className="text-green-600">• No significant issues</li>
+                  <li className="text-green-600">• {t('dashboard.noSignificantIssues')}</li>
                 )}
               </ul>
             </div>
@@ -439,7 +555,7 @@ export default function Dashboard() {
               <CheckCircle className="w-6 h-6 text-mint flex-shrink-0 mt-1" />
               <div>
                 <h4 className="text-lg font-semibold text-text-primary mb-2">
-                  Recommendation
+                  {t('dashboard.recommendation')}
                 </h4>
                 <p className="text-text-primary leading-relaxed">
                   {state.combined_explanation.recommendation}
@@ -463,10 +579,10 @@ export default function Dashboard() {
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-text-primary">
-                  Recommended Exercises
+                  {t('dashboard.recommendedExercises')}
                 </h3>
                 <p className="text-text-secondary">
-                  Based on your assessment results
+                  {t('dashboard.basedOnResults')}
                 </p>
               </div>
             </div>
@@ -477,7 +593,7 @@ export default function Dashboard() {
               className="flex items-center gap-2 bg-mint hover:bg-green-400 text-white font-bold py-2 px-6 rounded-full transition-all"
             >
               <Gamepad2 className="w-5 h-5" />
-              View All
+              {t('dashboard.viewAll')}
               <ChevronRight className="w-4 h-4" />
             </motion.button>
           </div>
@@ -509,7 +625,7 @@ export default function Dashboard() {
                       ? 'bg-yellow-100 text-yellow-700'
                       : 'bg-red-100 text-red-700'
                   }`}>
-                    {exercise.difficulty}
+                    {exercise.difficulty === 'Easy' ? t('common.easy') : exercise.difficulty === 'Medium' ? t('common.medium') : t('common.hard')}
                   </span>
                   <span className="text-xs text-text-secondary">{exercise.duration}</span>
                 </div>
@@ -519,8 +635,7 @@ export default function Dashboard() {
 
           <div className="mt-6 p-4 bg-pale-yellow/30 rounded-lg">
             <p className="text-text-primary text-sm">
-              <strong>Tip:</strong> Regular practice with these exercises can help improve reading and writing skills.
-              We recommend 10-15 minutes of practice 3-4 times per week for best results.
+              {t('dashboard.exerciseTip')}
             </p>
           </div>
         </motion.div>
@@ -532,13 +647,12 @@ export default function Dashboard() {
           transition={{ delay: 0.7 }}
           className="flex flex-wrap gap-4 justify-center"
         >
-          <button className="flex items-center gap-2 bg-soft-blue hover:bg-blue-400 text-white font-bold py-3 px-8 rounded-full transition-transform hover:scale-105">
+          <button
+            onClick={() => generatePDFReport()}
+            className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-3 px-8 rounded-full transition-transform hover:scale-105 shadow-lg"
+          >
             <Download className="w-5 h-5" />
-            Download PDF Report
-          </button>
-          <button className="flex items-center gap-2 bg-white hover:bg-gray-100 text-text-primary font-bold py-3 px-8 rounded-full transition-transform hover:scale-105 border-2 border-gray-300">
-            <FileText className="w-5 h-5" />
-            Email Report
+            {t('dashboard.downloadPDF')}
           </button>
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -547,7 +661,7 @@ export default function Dashboard() {
             className="flex items-center gap-2 bg-mint hover:bg-green-400 text-white font-bold py-3 px-8 rounded-full transition-all shadow-lg"
           >
             <Gamepad2 className="w-5 h-5" />
-            Start Practicing
+            {t('dashboard.startPracticing')}
           </motion.button>
         </motion.div>
       </motion.div>

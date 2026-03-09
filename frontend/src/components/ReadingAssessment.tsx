@@ -5,6 +5,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, CheckCircle, AlertCircle } from 'lucide-react';
+import InstructionModal from './InstructionModal';
+import { useTranslation } from 'react-i18next';
 
 // Type definitions
 interface GazePoint {
@@ -346,6 +348,9 @@ export default function ReadingAssessment({
   onComplete,
   onSkip,
 }: ReadingAssessmentProps) {
+  const { t } = useTranslation();
+  const readingText = t('reading.readingText');
+
   const [phase, setPhase] = useState<
     'intro' | 'calibration' | 'reading' | 'complete'
   >('intro');
@@ -528,7 +533,7 @@ export default function ReadingAssessment({
 
     const endTime = Date.now();
     const duration = (endTime - startTimeRef.current) / 1000;
-    const wordCount = READING_TEXT.split(/\s+/).length;
+    const wordCount = readingText.split(/\s+/).length;
 
     console.log(`📊 Collected ${gazePointsRef.current.length} gaze points over ${duration}s`);
 
@@ -569,55 +574,32 @@ export default function ReadingAssessment({
       : null;
 
       return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-100 to-green-100 p-8">
+        <div className="min-h-screen bg-gradient-to-br from-blue-100 to-green-100 p-8 pt-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="max-w-4xl mx-auto"
           >
-            {/* INTRO PHASE - кнопка Start должна быть здесь */}
-            {phase === 'intro' && (
-              <div className="glass-card p-8 text-center">
-                <Eye className="w-16 h-16 mx-auto mb-4 text-blue-500" />
-                <h2 className="text-2xl font-bold mb-4 text-gray-800">
-                  Reading Assessment with Eye Tracking
-                </h2>
-                <p className="text-lg mb-6 text-gray-600 leading-relaxed">
-                  We'll track your eye movements while you read a short story. This
-                  helps us understand your reading patterns.
-                </p>
-                <div className="bg-yellow-100 p-4 rounded-lg mb-6">
-                  <p className="text-base">
-                    <strong>What to do:</strong> First, you'll calibrate the eye
-                    tracker by clicking on dots that appear on the screen. Then, read the story
-                    at your normal pace.
-                  </p>
+            {/* INTRO PHASE – centered modal */}
+            <InstructionModal
+              open={phase === 'intro'}
+              icon={<Eye className="w-16 h-16 text-blue-500" />}
+              title={t('reading.modalTitle')}
+              description={t('reading.modalDesc')}
+              instructions={t('reading.modalInstructions')}
+              actionLabel={isStarting ? t('reading.starting') : t('reading.startAssessment')}
+              onAction={handleStart}
+              onClose={() => onSkip?.()}
+              onSkip={onSkip}
+              actionGradient="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+            >
+              {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-left">
+                  <AlertCircle className="inline mr-2" />
+                  {error}
                 </div>
-                {error && (
-                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                    <AlertCircle className="inline mr-2" />
-                    {error}
-                  </div>
-                )}
-                <button
-                  onClick={handleStart}
-                  disabled={isStarting}
-                  className={`bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full transition-transform hover:scale-105 ${
-                    isStarting ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  {isStarting ? 'Starting...' : 'Start Assessment'}
-                </button>
-                {onSkip && (
-                  <button
-                    onClick={onSkip}
-                    className="ml-4 text-gray-600 hover:text-gray-800 underline"
-                  >
-                    Skip this step
-                  </button>
-                )}
-              </div>
-            )}
+              )}
+            </InstructionModal>
       
             {/* CALIBRATION PHASE */}
             <div 
@@ -629,10 +611,10 @@ export default function ReadingAssessment({
             >
               <div className="text-center mb-8 absolute top-8 left-0 right-0">
                 <p className="text-xl text-gray-800 font-bold">
-                  Click on the red circle
+                  {t('reading.calibrationTitle')}
                 </p>
                 <p className="text-gray-600">
-                  Point {calibrationIndex + 1} of {CALIBRATION_POINTS.length}
+                  {t('reading.calibrationPoint', { current: calibrationIndex + 1, total: CALIBRATION_POINTS.length })}
                 </p>
               </div>
               {currentCalibrationPoint && (
@@ -658,7 +640,7 @@ export default function ReadingAssessment({
               <div className="glass-card p-8">
                 <div className="mb-6">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-600">Reading Progress</span>
+                    <span className="text-gray-600">{t('reading.readingProgress')}</span>
                     <span className="text-gray-800 font-bold">
                       {Math.round(progress)}%
                     </span>
@@ -674,7 +656,7 @@ export default function ReadingAssessment({
       
                 <div className="bg-white p-8 rounded-lg shadow-inner">
                   <p className="text-xl leading-relaxed text-gray-800">
-                    {READING_TEXT}
+                    {readingText}
                   </p>
                 </div>
       
@@ -682,7 +664,7 @@ export default function ReadingAssessment({
                   onClick={handleReadingComplete}
                   className="mt-6 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full transition-transform hover:scale-105"
                 >
-                  I'm Done Reading
+                  {t('reading.doneReading')}
                 </button>
               </div>
             )}
@@ -696,10 +678,10 @@ export default function ReadingAssessment({
               >
                 <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
                 <h2 className="text-2xl font-bold mb-4 text-gray-800">
-                  Great Job! 🎉
+                  {t('reading.completeTitle')}
                 </h2>
                 <p className="text-lg text-gray-600">
-                  Reading assessment complete. Analyzing your eye movements...
+                  {t('reading.completeDesc')}
                 </p>
               </motion.div>
             )}
