@@ -50,15 +50,20 @@ app = FastAPI(
 )
 
 # Configure CORS for React frontend
+# FRONTEND_URL can be set to a specific Vercel deployment URL
+FRONTEND_URL = os.getenv("FRONTEND_URL", "")
+
+cors_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+if FRONTEND_URL:
+    cors_origins.append(FRONTEND_URL)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",  # React dev server
-        "http://127.0.0.1:5173",
-        "https://mindstep-dyslexia-prime.vercel.app",  # Alternative localhost
-        "https://*.vercel.app"  # Для Vercel
-          # Временно для тестирования (потом уберём)
-    ],
+    allow_origins=cors_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -301,7 +306,7 @@ async def gemini_proxy(request: dict):
                         {"text": prompt},
                         {
                             "inline_data": {
-                                "mime_type": "image/png",
+                                "mime_type": "image/jpeg",
                                 "data": image_base64
                             }
                         }
@@ -368,7 +373,7 @@ async def gemini_proxy(request: dict):
             raise HTTPException(status_code=400, detail="Invalid request type")
 
         # Логируем URL который используем
-        api_url = f"{GEMINI_API_BASE}/models/gemini-3-flash-preview:generateContent?key={GEMINI_API_KEY}"
+        api_url = f"{GEMINI_API_BASE}/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
         logger.info(f"Calling Gemini API: {api_url[:80]}...")  # Показываем начало URL
         
         async with httpx.AsyncClient() as client:
@@ -415,25 +420,13 @@ async def global_exception_handler(request, exc):
             "error_type": type(exc).__name__
         }
     )
-@app.options("/api/gemini")
-async def options_gemini(request: Request):
-    """Handle CORS preflight for Gemini endpoint"""
-    return JSONResponse(
-        content={"status": "ok"},
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "*",
-        }
-    )
-
-
 if __name__ == "__main__":
     import uvicorn
+    port = int(os.getenv("PORT", "8000"))
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
-        reload=True,  # Enable auto-reload during development
+        port=port,
+        reload=True,
         log_level="info"
     )

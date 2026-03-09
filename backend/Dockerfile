@@ -1,29 +1,36 @@
-FROM python:3.10-slim
+FROM python:3.10-slim AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install build dependencies in a separate stage
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
 COPY requirements.txt .
-
-# Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# --- Final stage ---
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Copy installed packages from builder
+COPY --from=builder /install /usr/local
 
 # Copy application code
 COPY . .
 
-# Expose port
-EXPOSE 8000
+# Non-root user for security
+RUN adduser --disabled-password --no-create-home appuser
+USER appuser
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/health')"
+# Fly.io injects PORT at runtime (default 8080)
+ENV PORT=8080
+EXPOSE 8080
 
-# Run application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:' + __import__('os').environ.get('PORT','8080') + '/health')"
+
+CMD sh -c "uvicorn main:app --host 0.0.0.0 --port ${PORT}"
