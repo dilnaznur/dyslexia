@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: mindstep-api
+    name: mindstep-backend
     env: python
     region: frankfurt
     rootDir: backend
@@ -10,5 +10,5 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: PYTHON_VERSION
-        value: "3.12"
+        value: "3.11"
     plan: free

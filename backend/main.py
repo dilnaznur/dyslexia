@@ -98,6 +98,12 @@ async def root():
     }
 
 
+@app.get("/healthz", tags=["Health"])
+async def healthz_check():
+    """Lightweight liveness endpoint for uptime pings."""
+    return {"status": "ok"}
+
+
 @app.on_event("startup")
 async def startup_event():
     """Log startup information and model status."""
