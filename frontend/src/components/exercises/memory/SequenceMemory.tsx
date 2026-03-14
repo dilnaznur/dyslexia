@@ -304,8 +304,8 @@ export default function SequenceMemory({ onBack, onComplete }: SequenceMemoryPro
                     whileHover={gameState === 'input' ? { scale: 1.1 } : {}}
                     whileTap={gameState === 'input' ? { scale: 0.95 } : {}}
                     animate={{
-                      scale: showingIndex === index ? 1.2 : 1,
-                      backgroundColor: showingIndex === index ? shape.color : '#FFFFFF',
+                      scale: showingIndex !== -1 && sequence[showingIndex] === index ? 1.2 : 1,
+                      backgroundColor: showingIndex !== -1 && sequence[showingIndex] === index ? shape.color : '#FFFFFF',
                     }}
                     onClick={() => handleShapeClick(index)}
                     disabled={gameState !== 'input'}
@@ -315,7 +315,7 @@ export default function SequenceMemory({ onBack, onComplete }: SequenceMemoryPro
                         : 'cursor-default'
                     }`}
                     style={{
-                      boxShadow: showingIndex === index
+                      boxShadow: showingIndex !== -1 && sequence[showingIndex] === index
                         ? `0 0 30px ${shape.color}`
                         : undefined,
                     }}

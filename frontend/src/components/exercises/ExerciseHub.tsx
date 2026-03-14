@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Brain, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import { EXERCISE_CATEGORIES, ALL_EXERCISES } from '@/data/exercises';
 import { loadProgress, UserProgress } from '@/lib/exerciseStorage';
@@ -34,6 +35,7 @@ type ExerciseId = string;
 
 export default function ExerciseHub() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [viewState, setViewState] = useState<ViewState>('hub');
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [selectedExercise, setSelectedExercise] = useState<ExerciseId | null>(null);
@@ -152,7 +154,7 @@ export default function ExerciseHub() {
               className="flex items-center gap-2 text-white mb-8 hover:bg-white/20 px-4 py-2 rounded-full transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
-              Back to Categories
+              {t('exercises.hub.backToCategories')}
             </motion.button>
 
             {/* Category Title */}
@@ -165,8 +167,8 @@ export default function ExerciseHub() {
                   className="text-center mb-8"
                 >
                   <span className="text-6xl mb-4 block">{category.emoji}</span>
-                  <h1 className="text-4xl font-bold text-white mb-2">{category.name} Exercises</h1>
-                  <p className="text-white/80">{category.description}</p>
+                  <h1 className="text-4xl font-bold text-white mb-2">{t(`exercises.categories.${category.id}.name`)} {t('exercises.hub.exercises')}</h1>
+                  <p className="text-white/80">{t(`exercises.categories.${category.id}.description`)}</p>
                 </motion.div>
               ) : null;
             })()}
@@ -182,9 +184,9 @@ export default function ExerciseHub() {
                 >
                   <ExerciseCard
                     id={exercise.id}
-                    name={exercise.name}
+                    name={t(`exercises.${exercise.id}.name`, { defaultValue: exercise.name })}
                     emoji={exercise.emoji}
-                    description={exercise.description}
+                    description={t(`exercises.${exercise.id}.description`, { defaultValue: exercise.description })}
                     difficulty={exercise.difficulty}
                     duration={exercise.duration}
                     progress={progress.exercises[exercise.id]}
@@ -218,7 +220,7 @@ export default function ExerciseHub() {
               className="flex items-center gap-2 text-white mb-8 hover:bg-white/20 px-4 py-2 rounded-full transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
-              Back to Home
+              {t('exercises.hub.backToHome')}
             </motion.button>
 
             {/* Title */}
@@ -234,9 +236,9 @@ export default function ExerciseHub() {
               >
                 <Brain className="w-16 h-16 text-white" />
               </motion.div>
-              <h1 className="text-4xl font-bold text-white mb-2">Practice Exercises</h1>
+              <h1 className="text-4xl font-bold text-white mb-2">{t('exercises.hub.title')}</h1>
               <p className="text-white/80 text-lg">
-                Fun activities to help improve your reading and writing skills!
+                {t('exercises.hub.subtitle')}
               </p>
             </motion.div>
 
@@ -251,10 +253,10 @@ export default function ExerciseHub() {
                 >
                   <CategoryCard
                     id={category.id}
-                    name={category.name}
+                    name={t(`exercises.categories.${category.id}.name`, { defaultValue: category.name })}
                     emoji={category.emoji}
                     color={category.color}
-                    description={category.description}
+                    description={t(`exercises.categories.${category.id}.description`, { defaultValue: category.description })}
                     exerciseCount={category.exercises.length}
                     completedCount={getCategoryCompletedCount(category.id as CategoryId)}
                     onClick={() => handleCategorySelect(category.id as CategoryId)}
@@ -283,8 +285,8 @@ export default function ExerciseHub() {
                 <Sparkles className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
                 <p className="text-text-primary font-medium">
                   {progress.currentStreak > 0
-                    ? `Amazing! You're on a ${progress.currentStreak} day streak!`
-                    : 'Keep practicing to build your streak!'}
+                    ? t('exercises.hub.streakMessage', { count: progress.currentStreak })
+                    : t('exercises.hub.keepPracticing')}
                 </p>
               </motion.div>
             )}

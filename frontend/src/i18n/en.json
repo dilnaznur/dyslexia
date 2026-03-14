@@ -214,5 +214,65 @@
     "easy": "Easy",
     "medium": "Medium",
     "hard": "Hard"
+  },
+  "exercises": {
+    "hub": {
+      "title": "Practice Exercises",
+      "subtitle": "Fun activities to help improve your reading and writing skills!",
+      "backToHome": "Back to Home",
+      "backToCategories": "Back to Categories",
+      "exercises": "Exercises",
+      "keepPracticing": "Keep practicing to build your streak!",
+      "streakMessage": "Amazing! You're on a {{count}} day streak!",
+      "riskLow": "Low Risk",
+      "riskModerate": "Moderate Risk",
+      "riskHigh": "High Risk"
+    },
+    "categories": {
+      "reading": {
+        "name": "Reading",
+        "description": "Practice reading and word recognition"
+      },
+      "writing": {
+        "name": "Writing",
+        "description": "Practice letters and handwriting"
+      },
+      "memory": {
+        "name": "Memory",
+        "description": "Train your memory and attention"
+      }
+    },
+    "word-flash": {
+      "name": "Word Flash",
+      "description": "Recognize words quickly as they flash on screen"
+    },
+    "syllable-game": {
+      "name": "Syllable Splitter",
+      "description": "Break words into syllables by clapping along"
+    },
+    "reading-tracker": {
+      "name": "Reading Tracker",
+      "description": "Follow along with stories using a guide"
+    },
+    "letter-tracing": {
+      "name": "Letter Tracing",
+      "description": "Trace letters to learn their shapes"
+    },
+    "mirror-detective": {
+      "name": "Mirror Detective",
+      "description": "Find the backwards letters hiding in the grid"
+    },
+    "sequence-memory": {
+      "name": "Sequence Memory",
+      "description": "Remember and repeat shape sequences"
+    },
+    "odd-one-out": {
+      "name": "Odd One Out",
+      "description": "Find the word that is different from the others"
+    },
+    "sound-matching": {
+      "name": "Sound Matching",
+      "description": "Match words that sound alike"
+    }
   }
 }

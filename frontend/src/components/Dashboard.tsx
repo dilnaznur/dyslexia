@@ -108,18 +108,34 @@ export default function Dashboard() {
   }, [state.final_score]);
 
   // ====== PDF Report Generation ======
-  const generatePDFReport = () => {
+  const generatePDFReport = async () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
 
+    // Embed NotoSans for full Unicode (Cyrillic / Kazakh) support
+    try {
+      const [regularBytes, boldBytes] = await Promise.all([
+        fetch('/fonts/NotoSans-Regular.ttf').then((r) => r.arrayBuffer()),
+        fetch('/fonts/NotoSans-Bold.ttf').then((r) => r.arrayBuffer()),
+      ]);
+      const toBase64 = (buf: ArrayBuffer) =>
+        btoa(String.fromCharCode(...new Uint8Array(buf)));
+      doc.addFileToVFS('NotoSans-Regular.ttf', toBase64(regularBytes));
+      doc.addFont('NotoSans-Regular.ttf', 'NotoSans', 'normal');
+      doc.addFileToVFS('NotoSans-Bold.ttf', toBase64(boldBytes));
+      doc.addFont('NotoSans-Bold.ttf', 'NotoSans', 'bold');
+    } catch {
+      // Fallback to helvetica if fonts fail to load
+    }
+
     // Title
     doc.setFontSize(22);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('NotoSans', 'bold');
     doc.text(t('pdf.title'), pageWidth / 2, 22, { align: 'center' });
 
     // Date
     doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('NotoSans', 'normal');
     doc.text(`${t('pdf.date')}: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, 20, 34);
 
     // Divider
@@ -129,20 +145,20 @@ export default function Dashboard() {
 
     // Overall Score
     doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('NotoSans', 'bold');
     doc.text(t('pdf.overallRisk'), 20, 50);
     doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('NotoSans', 'normal');
     doc.text(`${t('pdf.finalRiskScore')}: ${Math.round(state.final_score || 0)} / 100`, 28, 60);
     doc.text(`${t('pdf.classification')}: ${state.final_classification || 'N/A'}`, 28, 68);
     doc.text(`${t('pdf.confidence')}: ${((state.combined_explanation?.confidence || 0) * 100).toFixed(1)}%`, 28, 76);
 
     // Chatbot / Cognitive Scores
     doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('NotoSans', 'bold');
     doc.text(t('pdf.cognitiveAssessment'), 20, 92);
     doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('NotoSans', 'normal');
     if (state.chatbot_data) {
       doc.text(`${t('pdf.memoryScore')}: ${state.chatbot_data.memory_score.toFixed(1)} / 10`, 28, 102);
       doc.text(`${t('pdf.attentionScore')}: ${state.chatbot_data.attention_score.toFixed(1)} / 10`, 28, 110);
@@ -154,10 +170,10 @@ export default function Dashboard() {
 
     // Eye-tracking
     doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('NotoSans', 'bold');
     doc.text(t('pdf.eyeTrackingAnalysis'), 20, 142);
     doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('NotoSans', 'normal');
     if (state.backend_prediction) {
       doc.text(`${t('pdf.riskScoreLabel')}: ${state.backend_prediction.risk_score.toFixed(1)} / 100`, 28, 152);
       doc.text(`${t('pdf.classification')}: ${state.backend_prediction.classification}`, 28, 160);
@@ -168,10 +184,10 @@ export default function Dashboard() {
 
     // Handwriting
     doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('NotoSans', 'bold');
     doc.text(t('pdf.handwritingAnalysis'), 20, 184);
     doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('NotoSans', 'normal');
     if (state.writing_data) {
       doc.text(`${t('pdf.strokeCount')}: ${state.writing_data.stroke_count}`, 28, 194);
       doc.text(`${t('pdf.avgStrokeSpeed')}: ${state.writing_data.avg_stroke_speed.toFixed(1)}`, 28, 202);
@@ -181,10 +197,10 @@ export default function Dashboard() {
 
     // Recommendation
     doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('NotoSans', 'bold');
     doc.text(t('pdf.recommendations'), 20, 220);
     doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('NotoSans', 'normal');
     const rec = state.combined_explanation?.recommendation || '';
     const recLines = doc.splitTextToSize(rec, pageWidth - 50);
     doc.text(recLines, 28, 230);
@@ -194,11 +210,11 @@ export default function Dashboard() {
     if (indicators.length > 0) {
       let y = 230 + recLines.length * 6 + 14;
       doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
+      doc.setFont('NotoSans', 'bold');
       doc.text(t('pdf.keyIndicators'), 20, y);
       y += 8;
       doc.setFontSize(11);
-      doc.setFont('helvetica', 'normal');
+      doc.setFont('NotoSans', 'normal');
       indicators.forEach((ind: string) => {
         const lines = doc.splitTextToSize(`• ${ind}`, pageWidth - 50);
         doc.text(lines, 28, y);
@@ -208,7 +224,7 @@ export default function Dashboard() {
 
     // Footer
     doc.setFontSize(9);
-    doc.setFont('helvetica', 'italic');
+    doc.setFont('NotoSans', 'normal');
     doc.text(
       t('pdf.disclaimer'),
       pageWidth / 2,
@@ -392,7 +408,11 @@ export default function Dashboard() {
 
           <div className={`inline-block px-6 py-3 rounded-full ${riskColor}`}>
             <span className="text-white font-bold text-xl">
-              {state.final_classification}
+              {state.final_classification === 'Low Risk'
+                ? t('exercises.hub.riskLow')
+                : state.final_classification === 'Moderate Risk'
+                ? t('exercises.hub.riskModerate')
+                : t('exercises.hub.riskHigh')}
             </span>
           </div>
 
@@ -612,10 +632,10 @@ export default function Dashboard() {
               >
                 <div className="text-3xl mb-2">{exercise.emoji}</div>
                 <h4 className="font-bold text-text-primary group-hover:text-soft-blue transition-colors">
-                  {exercise.name}
+                  {t(`exercises.${exercise.id}.name`, { defaultValue: exercise.name })}
                 </h4>
                 <p className="text-sm text-text-secondary line-clamp-2">
-                  {exercise.description}
+                  {t(`exercises.${exercise.id}.description`, { defaultValue: exercise.description })}
                 </p>
                 <div className="mt-2 flex items-center gap-2">
                   <span className={`text-xs px-2 py-1 rounded-full ${
