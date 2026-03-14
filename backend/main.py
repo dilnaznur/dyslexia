@@ -98,7 +98,7 @@ async def root():
     }
 
 
-@app.get("/healthz", tags=["Health"])
+@app.api_route("/healthz", methods=["GET", "HEAD"], include_in_schema=False)
 async def healthz_check():
     """Lightweight liveness endpoint for uptime pings."""
     return {"status": "ok"}
