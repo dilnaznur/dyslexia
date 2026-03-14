@@ -6,10 +6,8 @@ import { PredictionRequest, BackendPrediction } from '@/types';
 const DEFAULT_LOCAL_API_URL = 'http://127.0.0.1:8000';
 
 // Vercel exposes Vite variables at build time via import.meta.env.
-// Keep VITE_API_URL fallback for backwards compatibility.
 export const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_URL ||
   DEFAULT_LOCAL_API_URL
 ).replace(/\/+$/, '');
 

@@ -14,18 +14,21 @@ A clinical-grade, multimodal AI platform for early dyslexia detection in childre
 ## 🎯 Features
 
 ### **Multimodal Assessment**
+
 - **📖 Reading & Eye-Tracking**: WebGazer.js integration for real-time gaze tracking during reading tasks
 - **✍️ Handwriting Analysis**: Canvas-based writing capture with Gemini Vision AI analysis
 - **💬 Behavioral Chatbot**: Conversational assessment using Gemini 1.5 Flash for cognitive evaluation
 - **📊 Data Fusion Engine**: Weighted algorithm combining ML model + AI insights
 
 ### **AI/ML Stack**
+
 - **Random Forest Classifier** (85.7% accuracy, 94.1% at high confidence)
 - **12-feature eye-tracking pipeline** (TVI components, fixation metrics, entropy analysis)
 - **Google Gemini 1.5 Flash** (FREE tier: 15 RPM, 1M TPM)
 - **Explainable AI** (XAI) with feature importance visualization
 
 ### **Premium UX**
+
 - **Glassmorphism design** with cognitive-friendly colors
 - **OpenDyslexic font** for improved readability
 - **Framer Motion animations** with 60fps performance
@@ -36,6 +39,7 @@ A clinical-grade, multimodal AI platform for early dyslexia detection in childre
 ## 🚀 Quick Start
 
 ### **Prerequisites**
+
 - **Python 3.10+**
 - **Node.js 18+** and npm/yarn
 - **Webcam** (for eye-tracking)
@@ -44,12 +48,14 @@ A clinical-grade, multimodal AI platform for early dyslexia detection in childre
 ### **Installation**
 
 #### 1️⃣ Clone Repository
+
 ```bash
 git clone https://github.com/yourusername/mindstep-platform.git
 cd mindstep-platform
 ```
 
 #### 2️⃣ Backend Setup
+
 ```bash
 cd backend
 
@@ -65,10 +71,12 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 The backend will be available at `http://localhost:8000`
+
 - API Docs: `http://localhost:8000/docs`
 - Health Check: `http://localhost:8000/health`
 
 #### 3️⃣ Frontend Setup
+
 ```bash
 cd frontend
 
@@ -133,28 +141,32 @@ mindstep-platform/
 ## 🔬 ML Model Details
 
 ### **Training Data**
+
 - **Dataset**: 70 subjects, 210 recordings (3 tasks per subject)
 - **Source**: Eye-tracking fixation/saccade data (ETDD70)
 - **Classes**: Binary (Dyslexic vs. Non-dyslexic)
 
 ### **Model Architecture**
+
 - **Algorithm**: Random Forest Classifier
 - **Estimators**: 200 trees
 - **Max Depth**: 15
 - **Cross-Validation**: 10-fold StratifiedKFold
 
 ### **Performance Metrics**
-| Metric | Value |
-|--------|-------|
-| **Accuracy** | 85.71% ± 11.07% |
+
+| Metric                       | Value                      |
+| ---------------------------- | -------------------------- |
+| **Accuracy**                 | 85.71% ± 11.07%            |
 | **High-Confidence Accuracy** | 94.1% (at >0.90 threshold) |
-| **Sensitivity** | 80.0% |
-| **Specificity** | 91.4% |
-| **Precision** | 90.3% |
+| **Sensitivity**              | 80.0%                      |
+| **Specificity**              | 91.4%                      |
+| **Precision**                | 90.3%                      |
 
 ### **Features (12 Total)**
 
 #### Baseline Features (6)
+
 1. `num_fixations` - Count of eye fixation events
 2. `mean_fixation_duration` - Average fixation duration (ms)
 3. `median_fixation_duration` - Median fixation duration
@@ -163,16 +175,19 @@ mindstep-platform/
 6. `std_fixation_y` - Standard deviation of vertical position
 
 #### TVI Components (4)
+
 7. `entropy_fixation_duration` - Entropy of fixation distribution
 8. `autocorrelation` - Temporal autocorrelation (lag-1)
 9. `cv_inter_fixation_intervals` - Coefficient of variation
 10. `meta_variability` - Meta-level variability measure
 
 #### Derived Features (2)
+
 11. `tvi_score` - Simple TVI score (sum)
 12. `weighted_tvi_score` - Weighted TVI (ablation-optimized)
 
 **TVI Weights:**
+
 ```python
 {
   'entropy_fixation_duration': 2.86,  # Critical impact
@@ -187,21 +202,23 @@ mindstep-platform/
 ## 🎨 Design System
 
 ### **Color Palette**
+
 ```css
---color-mint: #A8E6CF         /* Success, Low Risk */
---color-soft-blue: #89CFF0    /* Primary, Reading */
---color-pale-yellow: #FFF9C4  /* Accent, Chat */
---color-lavender: #E0BBE4     /* Secondary, Writing */
---color-peach: #FFD3B6        /* Warm accent */
+--color-mint: #a8e6cf /* Success, Low Risk */ --color-soft-blue: #89cff0
+  /* Primary, Reading */ --color-pale-yellow: #fff9c4 /* Accent, Chat */
+  --color-lavender: #e0bbe4 /* Secondary, Writing */ --color-peach: #ffd3b6
+  /* Warm accent */;
 ```
 
 ### **Typography**
+
 - **Primary Font**: OpenDyslexic (dyslexia-friendly)
 - **Fallback**: Comic Sans MS, Arial
 - **Base Size**: 18px
 - **Line Height**: 1.8 (increased readability)
 
 ### **UI Components**
+
 - **Glassmorphism cards**: `backdrop-filter: blur(10px)`
 - **Animations**: Framer Motion (60fps)
 - **Icons**: Lucide React
@@ -223,6 +240,7 @@ mindstep-platform/
    - Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
 
 3. **Environment Variables** (Render Dashboard):
+
    ```
    PYTHON_VERSION=3.10
    ```
@@ -239,19 +257,22 @@ mindstep-platform/
 ### **Frontend: Vercel (FREE)**
 
 1. **Install Vercel CLI**:
+
    ```bash
    npm install -g vercel
    ```
 
 2. **Deploy from Frontend Directory**:
+
    ```bash
    cd frontend
    vercel
    ```
 
 3. **Configure Environment Variables** (Vercel Dashboard):
+
    ```
-  VITE_API_BASE_URL=https://your-backend.onrender.com
+   VITE_API_BASE_URL=https://your-backend.onrender.com
    VITE_GEMINI_API_KEY=your_gemini_api_key
    ```
 
@@ -267,6 +288,7 @@ mindstep-platform/
 ## 🔑 Environment Variables
 
 ### **Backend** (.env)
+
 ```bash
 # Optional: If using separate model files
 MODEL_PATH=models/optimal_tvi_model.pkl
@@ -274,6 +296,7 @@ SCALER_PATH=models/scaler.pkl
 ```
 
 ### **Frontend** (.env)
+
 ```bash
 # REQUIRED
 VITE_API_BASE_URL=http://localhost:8000     # Backend API URL
@@ -284,6 +307,7 @@ VITE_ENABLE_ANALYTICS=false                 # Enable Google Analytics
 ```
 
 **Get Gemini API Key**:
+
 1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
 2. Create new API key (FREE: 15 requests/min, 1M tokens/min)
 3. Copy key to `.env` file
@@ -297,12 +321,13 @@ VITE_ENABLE_ANALYTICS=false                 # Enable Google Analytics
 Predict dyslexia risk from eye-tracking data.
 
 **Request Body:**
+
 ```json
 {
   "reading_data": {
     "gaze_points": [
-      {"x": 150.5, "y": 200.3, "timestamp": 1000},
-      {"x": 170.2, "y": 205.1, "timestamp": 1250}
+      { "x": 150.5, "y": 200.3, "timestamp": 1000 },
+      { "x": 170.2, "y": 205.1, "timestamp": 1250 }
     ],
     "text_length": 50,
     "reading_duration": 45.5
@@ -311,6 +336,7 @@ Predict dyslexia risk from eye-tracking data.
 ```
 
 **Response:**
+
 ```json
 {
   "risk_score": 72.5,
@@ -337,6 +363,7 @@ Predict dyslexia risk from eye-tracking data.
 Submit clinical feedback for model improvement.
 
 **Request Body:**
+
 ```json
 {
   "prediction_id": "uuid-here",
@@ -350,6 +377,7 @@ Submit clinical feedback for model improvement.
 Health check endpoint.
 
 **Response:**
+
 ```json
 {
   "status": "healthy",
@@ -365,18 +393,21 @@ Full API documentation: `http://localhost:8000/docs`
 ## 🧪 Testing
 
 ### **Backend Tests**
+
 ```bash
 cd backend
 pytest tests/ -v
 ```
 
 ### **Frontend Tests**
+
 ```bash
 cd frontend
 npm run test
 ```
 
 ### **Manual Testing Checklist**
+
 - [ ] WebGazer calibration completes successfully
 - [ ] Eye-tracking captures gaze points during reading
 - [ ] Canvas handwriting capture works (mouse + touch)
@@ -394,22 +425,29 @@ npm run test
 ### **Common Issues**
 
 #### **WebGazer not initializing**
+
 ```
 Error: WebGazer not loaded
 ```
+
 **Solution**: Ensure camera permissions are granted. Check browser console for errors.
 
 #### **Gemini API 429 Error**
+
 ```
 Error: Gemini API error: 429
 ```
+
 **Solution**: FREE tier limit reached (15 RPM). Wait 60 seconds or upgrade to paid tier.
 
 #### **Backend CORS Error**
+
 ```
 Access to fetch blocked by CORS policy
 ```
+
 **Solution**: Add your frontend URL to `allow_origins` in `backend/main.py`:
+
 ```python
 allow_origins=[
     "http://localhost:5173",
@@ -418,10 +456,13 @@ allow_origins=[
 ```
 
 #### **Model file not found**
+
 ```
 FileNotFoundError: models/optimal_tvi_model.pkl
 ```
+
 **Solution**: The demo uses mock predictions. To use real model:
+
 1. Train model using `Dyslex2.ipynb`
 2. Save model files: `pickle.dump(model, open('optimal_tvi_model.pkl', 'wb'))`
 3. Place in `backend/models/` directory
@@ -432,18 +473,21 @@ FileNotFoundError: models/optimal_tvi_model.pkl
 ## 📈 Roadmap
 
 ### **Version 1.1** (Q2 2024)
+
 - [ ] Multi-language support (Kazakh, Russian)
 - [ ] Parent portal for tracking child progress
 - [ ] Export PDF reports with jsPDF
 - [ ] Email report functionality
 
 ### **Version 2.0** (Q3 2024)
+
 - [ ] Teacher dashboard (bulk classroom screening)
 - [ ] Longitudinal tracking (progress over time)
 - [ ] PWA with offline mode
 - [ ] Integration with school management systems
 
 ### **Future Features**
+
 - [ ] Voice input for chatbot (Web Speech API)
 - [ ] Real-time collaborative assessment (teachers + parents)
 - [ ] Mobile apps (React Native)
@@ -462,6 +506,7 @@ Contributions are welcome! Please follow these steps:
 5. Open a Pull Request
 
 **Code Style**:
+
 - Backend: PEP 8 (use `black` formatter)
 - Frontend: ESLint + Prettier (run `npm run lint`)
 
