@@ -79,7 +79,7 @@ npm install
 cp .env.example .env
 
 # Edit .env and add your Gemini API key:
-# VITE_API_URL=http://localhost:8000
+# VITE_API_BASE_URL=http://localhost:8000
 # VITE_GEMINI_API_KEY=your_gemini_api_key_here
 
 # Start development server
@@ -251,7 +251,7 @@ mindstep-platform/
 
 3. **Configure Environment Variables** (Vercel Dashboard):
    ```
-   VITE_API_URL=https://your-backend.onrender.com
+  VITE_API_BASE_URL=https://your-backend.onrender.com
    VITE_GEMINI_API_KEY=your_gemini_api_key
    ```
 
@@ -276,7 +276,7 @@ SCALER_PATH=models/scaler.pkl
 ### **Frontend** (.env)
 ```bash
 # REQUIRED
-VITE_API_URL=http://localhost:8000          # Backend API URL
+VITE_API_BASE_URL=http://localhost:8000     # Backend API URL
 VITE_GEMINI_API_KEY=your_gemini_api_key     # Google Gemini API key
 
 # OPTIONAL
