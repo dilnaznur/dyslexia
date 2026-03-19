@@ -6,6 +6,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Play, RotateCcw, ArrowRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { TRACING_LETTERS } from '@/data/exercises';
 import RewardAnimation from '../RewardAnimation';
 import { recordExerciseCompletion, UserProgress } from '@/lib/exerciseStorage';
@@ -21,6 +22,7 @@ interface Point {
 }
 
 export default function LetterTracing({ onBack, onComplete }: LetterTracingProps) {
+  const { t } = useTranslation();
   const [gameState, setGameState] = useState<'intro' | 'playing' | 'result' | 'reward'>('intro');
   const [letters, setLetters] = useState<string[]>([]);
   const [currentLetterIndex, setCurrentLetterIndex] = useState(0);
@@ -225,7 +227,7 @@ export default function LetterTracing({ onBack, onComplete }: LetterTracingProps
           className="flex items-center gap-2 text-white mb-8 hover:bg-white/20 px-4 py-2 rounded-full transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
-          Back to Exercises
+          {t('exerciseScreens.common.backToExercises')}
         </motion.button>
 
         <AnimatePresence mode="wait">
@@ -245,18 +247,18 @@ export default function LetterTracing({ onBack, onComplete }: LetterTracingProps
               >
                 ✏️
               </motion.div>
-              <h1 className="text-3xl font-bold text-text-primary mb-4">Letter Tracing</h1>
+              <h1 className="text-3xl font-bold text-text-primary mb-4">{t('exercises.letter-tracing.name', { defaultValue: 'Letter Tracing' })}</h1>
               <p className="text-text-secondary mb-6">
-                Trace letters with your finger or mouse to practice their shapes!
+                {t('exerciseScreens.letterTracing.intro')}
               </p>
 
               <div className="bg-white/30 rounded-xl p-6 mb-8">
-                <h3 className="font-semibold text-text-primary mb-4">Tips:</h3>
+                <h3 className="font-semibold text-text-primary mb-4">{t('exerciseScreens.letterTracing.tipsTitle')}</h3>
                 <ul className="text-left text-text-secondary space-y-2">
-                  <li>• Follow the dotted letter guide</li>
-                  <li>• Take your time - accuracy is more important than speed</li>
-                  <li>• Pay special attention to b, d, p, and q - they can be tricky!</li>
-                  <li>• You can clear and try again if needed</li>
+                  <li>• {t('exerciseScreens.letterTracing.tip1')}</li>
+                  <li>• {t('exerciseScreens.letterTracing.tip2')}</li>
+                  <li>• {t('exerciseScreens.letterTracing.tip3')}</li>
+                  <li>• {t('exerciseScreens.letterTracing.tip4')}</li>
                 </ul>
               </div>
 
@@ -267,7 +269,7 @@ export default function LetterTracing({ onBack, onComplete }: LetterTracingProps
                 className="bg-lavender hover:bg-purple-400 text-white font-bold text-xl py-4 px-12 rounded-full shadow-lg flex items-center gap-3 mx-auto"
               >
                 <Play className="w-6 h-6" />
-                Start Tracing
+                {t('exerciseScreens.letterTracing.startTracing')}
               </motion.button>
             </motion.div>
           )}
@@ -284,10 +286,10 @@ export default function LetterTracing({ onBack, onComplete }: LetterTracingProps
               {/* Progress */}
               <div className="flex justify-between items-center mb-4">
                 <span className="text-text-secondary">
-                  Letter {currentLetterIndex + 1} of {letters.length}
+                  {t('exerciseScreens.letterTracing.letterCounter', { current: currentLetterIndex + 1, total: letters.length })}
                 </span>
                 <span className="text-text-primary font-bold">
-                  Score: {score}
+                  {t('exerciseScreens.common.score', { score })}
                 </span>
               </div>
 
@@ -302,11 +304,11 @@ export default function LetterTracing({ onBack, onComplete }: LetterTracingProps
               {/* Letter info */}
               <div className="text-center mb-4">
                 <p className="text-text-secondary">
-                  Trace the letter: <span className="text-3xl font-bold text-text-primary">{currentLetter?.toUpperCase()}</span>
+                  {t('exerciseScreens.letterTracing.traceLetter')}: <span className="text-3xl font-bold text-text-primary">{currentLetter?.toUpperCase()}</span>
                 </p>
                 {TRACING_LETTERS.confusionPairs.includes(currentLetter) && (
                   <p className="text-sm text-lavender mt-1">
-                    This letter is often confused - take your time!
+                    {t('exerciseScreens.letterTracing.confusionHint')}
                   </p>
                 )}
               </div>
@@ -354,7 +356,7 @@ export default function LetterTracing({ onBack, onComplete }: LetterTracingProps
                   className="flex items-center gap-2 bg-white/50 hover:bg-white/70 text-text-primary font-bold py-3 px-6 rounded-full"
                 >
                   <RotateCcw className="w-5 h-5" />
-                  Clear
+                  {t('exerciseScreens.letterTracing.clear')}
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -362,7 +364,7 @@ export default function LetterTracing({ onBack, onComplete }: LetterTracingProps
                   onClick={submitLetter}
                   className="flex items-center gap-2 bg-mint hover:bg-green-400 text-white font-bold py-3 px-6 rounded-full shadow-lg"
                 >
-                  {currentLetterIndex < letters.length - 1 ? 'Next' : 'Finish'}
+                  {currentLetterIndex < letters.length - 1 ? t('exerciseScreens.common.next') : t('exerciseScreens.common.finish')}
                   <ArrowRight className="w-5 h-5" />
                 </motion.button>
               </div>
@@ -377,12 +379,12 @@ export default function LetterTracing({ onBack, onComplete }: LetterTracingProps
               animate={{ opacity: 1, scale: 1 }}
               className="glass-card p-8 text-center"
             >
-              <h2 className="text-3xl font-bold text-text-primary mb-4">Great Tracing!</h2>
+              <h2 className="text-3xl font-bold text-text-primary mb-4">{t('exerciseScreens.letterTracing.resultTitle')}</h2>
               <div className="text-6xl font-bold text-lavender mb-4">
                 {score}/{letters.length * 3}
               </div>
               <p className="text-text-secondary mb-6">
-                You traced {letters.length} letters!
+                {t('exerciseScreens.letterTracing.resultSummary', { total: letters.length })}
               </p>
 
               {/* Letter breakdown */}
@@ -406,7 +408,7 @@ export default function LetterTracing({ onBack, onComplete }: LetterTracingProps
                   onClick={initializeGame}
                   className="bg-lavender hover:bg-purple-400 text-white font-bold py-3 px-8 rounded-full"
                 >
-                  Practice Again
+                  {t('exerciseScreens.letterTracing.practiceAgain')}
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -414,7 +416,7 @@ export default function LetterTracing({ onBack, onComplete }: LetterTracingProps
                   onClick={onBack}
                   className="bg-white/50 hover:bg-white/70 text-text-primary font-bold py-3 px-8 rounded-full"
                 >
-                  Back to Hub
+                  {t('exerciseScreens.common.backToHub')}
                 </motion.button>
               </div>
             </motion.div>

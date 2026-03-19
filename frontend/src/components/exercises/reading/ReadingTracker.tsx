@@ -6,6 +6,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Play, ChevronUp, ChevronDown, CheckCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { READING_PASSAGES } from '@/data/exercises';
 import RewardAnimation from '../RewardAnimation';
 import { recordExerciseCompletion, UserProgress } from '@/lib/exerciseStorage';
@@ -18,6 +19,7 @@ interface ReadingTrackerProps {
 type Difficulty = 'easy' | 'medium' | 'hard';
 
 export default function ReadingTracker({ onBack, onComplete }: ReadingTrackerProps) {
+  const { t } = useTranslation();
   const [gameState, setGameState] = useState<'intro' | 'reading' | 'quiz' | 'result' | 'reward'>('intro');
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
@@ -131,7 +133,7 @@ export default function ReadingTracker({ onBack, onComplete }: ReadingTrackerPro
           className="flex items-center gap-2 text-white mb-8 hover:bg-white/20 px-4 py-2 rounded-full transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
-          Back to Exercises
+          {t('exerciseScreens.common.backToExercises')}
         </motion.button>
 
         <AnimatePresence mode="wait">
@@ -151,14 +153,14 @@ export default function ReadingTracker({ onBack, onComplete }: ReadingTrackerPro
               >
                 📏
               </motion.div>
-              <h1 className="text-3xl font-bold text-text-primary mb-4">Reading Tracker</h1>
+              <h1 className="text-3xl font-bold text-text-primary mb-4">{t('exercises.reading-tracker.name', { defaultValue: 'Reading Tracker' })}</h1>
               <p className="text-text-secondary mb-6">
-                Read a story line by line with a guide to help you focus!
+                {t('exerciseScreens.readingTracker.intro')}
               </p>
 
               {/* Story Selection */}
               <div className="mb-8">
-                <h3 className="text-lg font-semibold text-text-primary mb-4">Choose a Story</h3>
+                <h3 className="text-lg font-semibold text-text-primary mb-4">{t('exerciseScreens.readingTracker.chooseStory')}</h3>
                 <div className="flex gap-4 justify-center flex-wrap">
                   {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => {
                     const p = READING_PASSAGES.find((passage) => passage.difficulty === d);
@@ -174,7 +176,7 @@ export default function ReadingTracker({ onBack, onComplete }: ReadingTrackerPro
                             : 'bg-white/50 text-text-primary hover:bg-white/70'
                         }`}
                       >
-                        <span className="block capitalize text-lg">{d}</span>
+                        <span className="block capitalize text-lg">{d === 'easy' ? t('common.easy') : d === 'medium' ? t('common.medium') : t('common.hard')}</span>
                         <span className="text-sm opacity-80">{p?.title}</span>
                       </motion.button>
                     );
@@ -189,7 +191,7 @@ export default function ReadingTracker({ onBack, onComplete }: ReadingTrackerPro
                 className="bg-mint hover:bg-green-400 text-white font-bold text-xl py-4 px-12 rounded-full shadow-lg flex items-center gap-3 mx-auto"
               >
                 <Play className="w-6 h-6" />
-                Start Reading
+                {t('exerciseScreens.readingTracker.startReading')}
               </motion.button>
             </motion.div>
           )}
@@ -208,7 +210,7 @@ export default function ReadingTracker({ onBack, onComplete }: ReadingTrackerPro
                 {passage.title}
               </h2>
               <p className="text-center text-text-secondary mb-6">
-                Line {currentLineIndex + 1} of {passage.lines.length}
+                {t('exerciseScreens.readingTracker.lineCounter', { current: currentLineIndex + 1, total: passage.lines.length })}
               </p>
 
               {/* Progress bar */}
@@ -241,7 +243,7 @@ export default function ReadingTracker({ onBack, onComplete }: ReadingTrackerPro
 
               {/* Navigation Instructions */}
               <p className="text-center text-text-secondary mb-4">
-                Use the buttons or arrow keys to move between lines
+                {t('exerciseScreens.readingTracker.navigationHint')}
               </p>
 
               {/* Navigation Buttons */}
@@ -276,7 +278,7 @@ export default function ReadingTracker({ onBack, onComplete }: ReadingTrackerPro
 
               {currentLineIndex === passage.lines.length - 1 && (
                 <p className="text-center text-mint font-medium mt-4">
-                  Click the checkmark to take a short quiz!
+                  {t('exerciseScreens.readingTracker.quizHint')}
                 </p>
               )}
             </motion.div>
@@ -291,9 +293,9 @@ export default function ReadingTracker({ onBack, onComplete }: ReadingTrackerPro
               exit={{ opacity: 0 }}
               className="glass-card p-8 text-center"
             >
-              <h2 className="text-2xl font-bold text-text-primary mb-2">Quick Quiz!</h2>
+              <h2 className="text-2xl font-bold text-text-primary mb-2">{t('exerciseScreens.readingTracker.quickQuiz')}</h2>
               <p className="text-text-secondary mb-6">
-                Question {currentQuizIndex + 1} of {quizQuestions.length}
+                {t('exerciseScreens.readingTracker.questionCounter', { current: currentQuizIndex + 1, total: quizQuestions.length })}
               </p>
 
               {/* Progress bar */}
@@ -311,7 +313,7 @@ export default function ReadingTracker({ onBack, onComplete }: ReadingTrackerPro
                 </p>
               </div>
 
-              <p className="text-text-secondary mb-6">Is this true or false?</p>
+              <p className="text-text-secondary mb-6">{t('exerciseScreens.readingTracker.trueFalsePrompt')}</p>
 
               {/* Answer Buttons */}
               <div className="flex gap-4 justify-center">
@@ -321,7 +323,7 @@ export default function ReadingTracker({ onBack, onComplete }: ReadingTrackerPro
                   onClick={() => handleQuizAnswer(true)}
                   className="bg-mint hover:bg-green-400 text-white font-bold py-4 px-12 rounded-full shadow-lg"
                 >
-                  True
+                  {t('exerciseScreens.common.true')}
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -329,7 +331,7 @@ export default function ReadingTracker({ onBack, onComplete }: ReadingTrackerPro
                   onClick={() => handleQuizAnswer(false)}
                   className="bg-red-400 hover:bg-red-500 text-white font-bold py-4 px-12 rounded-full shadow-lg"
                 >
-                  False
+                  {t('exerciseScreens.common.false')}
                 </motion.button>
               </div>
             </motion.div>
@@ -343,12 +345,12 @@ export default function ReadingTracker({ onBack, onComplete }: ReadingTrackerPro
               animate={{ opacity: 1, scale: 1 }}
               className="glass-card p-8 text-center"
             >
-              <h2 className="text-3xl font-bold text-text-primary mb-4">Great Reading!</h2>
+              <h2 className="text-3xl font-bold text-text-primary mb-4">{t('exerciseScreens.readingTracker.resultTitle')}</h2>
               <div className="text-6xl font-bold text-mint mb-4">
                 {score}/{quizQuestions.length}
               </div>
               <p className="text-text-secondary mb-8">
-                You answered {score} out of {quizQuestions.length} questions correctly!
+                {t('exerciseScreens.readingTracker.resultSummary', { score, total: quizQuestions.length })}
               </p>
 
               <div className="flex gap-4 justify-center">
@@ -358,7 +360,7 @@ export default function ReadingTracker({ onBack, onComplete }: ReadingTrackerPro
                   onClick={initializeGame}
                   className="bg-mint hover:bg-green-400 text-white font-bold py-3 px-8 rounded-full"
                 >
-                  Read Again
+                  {t('exerciseScreens.readingTracker.readAgain')}
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -366,7 +368,7 @@ export default function ReadingTracker({ onBack, onComplete }: ReadingTrackerPro
                   onClick={onBack}
                   className="bg-white/50 hover:bg-white/70 text-text-primary font-bold py-3 px-8 rounded-full"
                 >
-                  Back to Hub
+                  {t('exerciseScreens.common.backToHub')}
                 </motion.button>
               </div>
             </motion.div>

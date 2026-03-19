@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Play, CheckCircle, XCircle, Zap } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { WORD_FLASH_WORDS } from '@/data/exercises';
 import RewardAnimation from '../RewardAnimation';
 import { recordExerciseCompletion, UserProgress } from '@/lib/exerciseStorage';
@@ -18,6 +19,7 @@ interface WordFlashProps {
 type Difficulty = 'easy' | 'medium' | 'hard';
 
 export default function WordFlash({ onBack, onComplete }: WordFlashProps) {
+  const { t } = useTranslation();
   const [gameState, setGameState] = useState<'intro' | 'playing' | 'result' | 'reward'>('intro');
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
@@ -114,7 +116,7 @@ export default function WordFlash({ onBack, onComplete }: WordFlashProps) {
           className="flex items-center gap-2 text-white mb-8 hover:bg-white/20 px-4 py-2 rounded-full transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
-          Back to Exercises
+          {t('exerciseScreens.common.backToExercises')}
         </motion.button>
 
         {/* Intro Screen */}
@@ -134,14 +136,14 @@ export default function WordFlash({ onBack, onComplete }: WordFlashProps) {
               >
                 ⚡
               </motion.div>
-              <h1 className="text-3xl font-bold text-text-primary mb-4">Word Flash</h1>
+              <h1 className="text-3xl font-bold text-text-primary mb-4">{t('exercises.word-flash.name', { defaultValue: 'Word Flash' })}</h1>
               <p className="text-text-secondary mb-8">
-                Words will flash on the screen. Click "I Saw It!" when you recognize the word!
+                {t('exerciseScreens.wordFlash.intro')}
               </p>
 
               {/* Difficulty Selection */}
               <div className="mb-8">
-                <h3 className="text-lg font-semibold text-text-primary mb-4">Choose Difficulty</h3>
+                <h3 className="text-lg font-semibold text-text-primary mb-4">{t('exerciseScreens.common.chooseDifficulty')}</h3>
                 <div className="flex gap-4 justify-center">
                   {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
                     <motion.button
@@ -155,14 +157,14 @@ export default function WordFlash({ onBack, onComplete }: WordFlashProps) {
                           : 'bg-white/50 text-text-primary hover:bg-white/70'
                       }`}
                     >
-                      {d}
+                      {d === 'easy' ? t('common.easy') : d === 'medium' ? t('common.medium') : t('common.hard')}
                     </motion.button>
                   ))}
                 </div>
                 <p className="text-sm text-text-secondary mt-2">
-                  {difficulty === 'easy' && 'Simple words, slower flash (1.5s)'}
-                  {difficulty === 'medium' && 'Longer words, medium flash (1s)'}
-                  {difficulty === 'hard' && 'Complex words, fast flash (0.6s)'}
+                  {difficulty === 'easy' && t('exerciseScreens.wordFlash.easyHint')}
+                  {difficulty === 'medium' && t('exerciseScreens.wordFlash.mediumHint')}
+                  {difficulty === 'hard' && t('exerciseScreens.wordFlash.hardHint')}
                 </p>
               </div>
 
@@ -173,7 +175,7 @@ export default function WordFlash({ onBack, onComplete }: WordFlashProps) {
                 className="bg-mint hover:bg-green-400 text-white font-bold text-xl py-4 px-12 rounded-full shadow-lg flex items-center gap-3 mx-auto"
               >
                 <Play className="w-6 h-6" />
-                Start Game
+                {t('exerciseScreens.common.startGame')}
               </motion.button>
             </motion.div>
           )}
@@ -190,10 +192,10 @@ export default function WordFlash({ onBack, onComplete }: WordFlashProps) {
               {/* Progress */}
               <div className="flex justify-between items-center mb-8">
                 <span className="text-text-secondary">
-                  Word {currentWordIndex + 1} of {words.length}
+                  {t('exerciseScreens.common.wordCounter', { current: currentWordIndex + 1, total: words.length })}
                 </span>
                 <span className="text-text-primary font-bold">
-                  Score: {score}
+                  {t('exerciseScreens.common.score', { score })}
                 </span>
               </div>
 
@@ -228,7 +230,7 @@ export default function WordFlash({ onBack, onComplete }: WordFlashProps) {
                       className="text-text-secondary"
                     >
                       <Zap className="w-16 h-16 mx-auto mb-2 text-soft-blue" />
-                      <p>Get ready...</p>
+                      <p>{t('exerciseScreens.common.getReady')}</p>
                     </motion.div>
                   )}
                   {lastResult && (
@@ -240,12 +242,12 @@ export default function WordFlash({ onBack, onComplete }: WordFlashProps) {
                       {lastResult === 'correct' ? (
                         <>
                           <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-2" />
-                          <p className="text-2xl font-bold text-green-500">Correct!</p>
+                          <p className="text-2xl font-bold text-green-500">{t('exerciseScreens.common.correct')}</p>
                         </>
                       ) : (
                         <>
                           <XCircle className="w-20 h-20 text-red-500 mx-auto mb-2" />
-                          <p className="text-2xl font-bold text-red-500">Try Again!</p>
+                          <p className="text-2xl font-bold text-red-500">{t('exerciseScreens.common.tryAgain')}</p>
                         </>
                       )}
                     </motion.div>
@@ -266,7 +268,7 @@ export default function WordFlash({ onBack, onComplete }: WordFlashProps) {
                     onClick={() => handleResponse(true)}
                     className="bg-mint hover:bg-green-400 text-white font-bold py-4 px-8 rounded-full shadow-lg"
                   >
-                    I Saw It!
+                    {t('exerciseScreens.wordFlash.sawIt')}
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
@@ -274,7 +276,7 @@ export default function WordFlash({ onBack, onComplete }: WordFlashProps) {
                     onClick={() => handleResponse(false)}
                     className="bg-white/50 hover:bg-white/70 text-text-primary font-bold py-4 px-8 rounded-full shadow-lg"
                   >
-                    Missed It
+                    {t('exerciseScreens.wordFlash.missedIt')}
                   </motion.button>
                 </motion.div>
               )}
@@ -289,12 +291,12 @@ export default function WordFlash({ onBack, onComplete }: WordFlashProps) {
               animate={{ opacity: 1, scale: 1 }}
               className="glass-card p-8 text-center"
             >
-              <h2 className="text-3xl font-bold text-text-primary mb-4">Game Complete!</h2>
+              <h2 className="text-3xl font-bold text-text-primary mb-4">{t('exerciseScreens.common.gameComplete')}</h2>
               <div className="text-6xl font-bold text-mint mb-4">
                 {Math.round((score / words.length) * 100)}%
               </div>
               <p className="text-text-secondary mb-8">
-                You recognized {score} out of {words.length} words!
+                {t('exerciseScreens.wordFlash.resultSummary', { score, total: words.length })}
               </p>
 
               <div className="flex gap-4 justify-center">
@@ -304,7 +306,7 @@ export default function WordFlash({ onBack, onComplete }: WordFlashProps) {
                   onClick={initializeGame}
                   className="bg-soft-blue hover:bg-blue-400 text-white font-bold py-3 px-8 rounded-full"
                 >
-                  Play Again
+                  {t('exerciseScreens.common.playAgain')}
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -312,7 +314,7 @@ export default function WordFlash({ onBack, onComplete }: WordFlashProps) {
                   onClick={onBack}
                   className="bg-white/50 hover:bg-white/70 text-text-primary font-bold py-3 px-8 rounded-full"
                 >
-                  Back to Hub
+                  {t('exerciseScreens.common.backToHub')}
                 </motion.button>
               </div>
             </motion.div>

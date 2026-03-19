@@ -6,6 +6,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Play, Volume2, CheckCircle, XCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { SOUND_MATCHING_ROUNDS } from '@/data/exercises';
 import RewardAnimation from '../RewardAnimation';
 import { recordExerciseCompletion, UserProgress } from '@/lib/exerciseStorage';
@@ -16,6 +17,7 @@ interface SoundMatchingProps {
 }
 
 export default function SoundMatching({ onBack, onComplete }: SoundMatchingProps) {
+  const { t } = useTranslation();
   const [gameState, setGameState] = useState<'intro' | 'playing' | 'feedback' | 'result' | 'reward'>('intro');
   const [rounds, setRounds] = useState<typeof SOUND_MATCHING_ROUNDS>([]);
   const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
@@ -134,7 +136,7 @@ export default function SoundMatching({ onBack, onComplete }: SoundMatchingProps
           className="flex items-center gap-2 text-white mb-8 hover:bg-white/20 px-4 py-2 rounded-full transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
-          Back to Exercises
+          {t('exerciseScreens.common.backToExercises')}
         </motion.button>
 
         <AnimatePresence mode="wait">
@@ -154,13 +156,13 @@ export default function SoundMatching({ onBack, onComplete }: SoundMatchingProps
               >
                 🔊
               </motion.div>
-              <h1 className="text-3xl font-bold text-text-primary mb-4">Sound Matching</h1>
+              <h1 className="text-3xl font-bold text-text-primary mb-4">{t('exercises.sound-matching.name', { defaultValue: 'Sound Matching' })}</h1>
               <p className="text-text-secondary mb-6">
-                Listen to the word and find which word sounds similar!
+                {t('exerciseScreens.soundMatching.intro')}
               </p>
 
               <div className="bg-white/30 rounded-xl p-6 mb-8">
-                <h3 className="font-semibold text-text-primary mb-4">How to Play:</h3>
+                <h3 className="font-semibold text-text-primary mb-4">{t('exerciseScreens.common.howToPlay')}</h3>
                 <div className="flex items-center justify-center gap-4 mb-4">
                   <div className="flex items-center gap-2 bg-soft-blue text-white px-4 py-2 rounded-full">
                     <Volume2 className="w-5 h-5" />
@@ -173,7 +175,7 @@ export default function SoundMatching({ onBack, onComplete }: SoundMatchingProps
                   </div>
                 </div>
                 <p className="text-sm text-text-secondary">
-                  Find words that rhyme or start with the same sound!
+                  {t('exerciseScreens.soundMatching.howToPlay')}
                 </p>
               </div>
 
@@ -184,7 +186,7 @@ export default function SoundMatching({ onBack, onComplete }: SoundMatchingProps
                 className="bg-soft-blue hover:bg-blue-400 text-white font-bold text-xl py-4 px-12 rounded-full shadow-lg flex items-center gap-3 mx-auto"
               >
                 <Play className="w-6 h-6" />
-                Start Game
+                {t('exerciseScreens.common.startGame')}
               </motion.button>
             </motion.div>
           )}
@@ -201,10 +203,10 @@ export default function SoundMatching({ onBack, onComplete }: SoundMatchingProps
               {/* Progress */}
               <div className="flex justify-between items-center mb-6">
                 <span className="text-text-secondary">
-                  Round {currentRoundIndex + 1} of {rounds.length}
+                  {t('exerciseScreens.common.roundCounter', { current: currentRoundIndex + 1, total: rounds.length })}
                 </span>
                 <span className="text-text-primary font-bold">
-                  Score: {score}
+                  {t('exerciseScreens.common.score', { score })}
                 </span>
               </div>
 
@@ -219,8 +221,8 @@ export default function SoundMatching({ onBack, onComplete }: SoundMatchingProps
               {/* Match type instruction */}
               <p className="text-center text-text-secondary mb-4">
                 {currentRound.matchType === 'rhyme'
-                  ? 'Find the word that RHYMES with:'
-                  : 'Find the word that STARTS with the same sound as:'}
+                  ? t('exerciseScreens.soundMatching.findRhymes')
+                  : t('exerciseScreens.soundMatching.findStartsSame')}
               </p>
 
               {/* Target Word */}
@@ -246,7 +248,7 @@ export default function SoundMatching({ onBack, onComplete }: SoundMatchingProps
 
               {/* Tap to hear instruction */}
               <p className="text-center text-text-secondary text-sm mb-6">
-                Tap the word above to hear it again!
+                {t('exerciseScreens.soundMatching.tapToHear')}
               </p>
 
               {/* Options */}
@@ -296,17 +298,24 @@ export default function SoundMatching({ onBack, onComplete }: SoundMatchingProps
                 >
                   {isCorrect ? (
                     <div>
-                      <p className="text-xl font-bold text-green-500 mb-2">Correct!</p>
+                      <p className="text-xl font-bold text-green-500 mb-2">{t('exerciseScreens.common.correct')}</p>
                       <p className="text-text-secondary">
-                        "{currentRound.targetWord}" and "{currentRound.options.find(o => o.isMatch)?.word}"
-                        {currentRound.matchType === 'rhyme' ? ' rhyme!' : ' start the same!'}
+                        {t('exerciseScreens.soundMatching.correctFeedback', {
+                          target: currentRound.targetWord,
+                          match: currentRound.options.find(o => o.isMatch)?.word,
+                          relation: currentRound.matchType === 'rhyme'
+                            ? t('exerciseScreens.soundMatching.relationRhyme')
+                            : t('exerciseScreens.soundMatching.relationStartSame'),
+                        })}
                       </p>
                     </div>
                   ) : (
                     <div>
-                      <p className="text-xl font-bold text-red-500 mb-2">Not quite!</p>
+                      <p className="text-xl font-bold text-red-500 mb-2">{t('exerciseScreens.common.notQuite')}</p>
                       <p className="text-text-secondary">
-                        The correct answer was "{currentRound.options.find(o => o.isMatch)?.word}"
+                        {t('exerciseScreens.soundMatching.wrongFeedback', {
+                          answer: currentRound.options.find(o => o.isMatch)?.word,
+                        })}
                       </p>
                     </div>
                   )}
@@ -323,12 +332,12 @@ export default function SoundMatching({ onBack, onComplete }: SoundMatchingProps
               animate={{ opacity: 1, scale: 1 }}
               className="glass-card p-8 text-center"
             >
-              <h2 className="text-3xl font-bold text-text-primary mb-4">Great Listening!</h2>
+              <h2 className="text-3xl font-bold text-text-primary mb-4">{t('exerciseScreens.soundMatching.resultTitle')}</h2>
               <div className="text-6xl font-bold text-soft-blue mb-4">
                 {Math.round((score / rounds.length) * 100)}%
               </div>
               <p className="text-text-secondary mb-8">
-                You matched {score} out of {rounds.length} sounds correctly!
+                {t('exerciseScreens.soundMatching.resultSummary', { score, total: rounds.length })}
               </p>
 
               <div className="flex gap-4 justify-center">
@@ -338,7 +347,7 @@ export default function SoundMatching({ onBack, onComplete }: SoundMatchingProps
                   onClick={initializeGame}
                   className="bg-soft-blue hover:bg-blue-400 text-white font-bold py-3 px-8 rounded-full"
                 >
-                  Play Again
+                  {t('exerciseScreens.common.playAgain')}
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -346,7 +355,7 @@ export default function SoundMatching({ onBack, onComplete }: SoundMatchingProps
                   onClick={onBack}
                   className="bg-white/50 hover:bg-white/70 text-text-primary font-bold py-3 px-8 rounded-full"
                 >
-                  Back to Hub
+                  {t('exerciseScreens.common.backToHub')}
                 </motion.button>
               </div>
             </motion.div>

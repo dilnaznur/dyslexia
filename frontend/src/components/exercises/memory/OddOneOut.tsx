@@ -6,6 +6,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Play, CheckCircle, XCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { ODD_ONE_OUT_ROUNDS } from '@/data/exercises';
 import RewardAnimation from '../RewardAnimation';
 import { recordExerciseCompletion, UserProgress } from '@/lib/exerciseStorage';
@@ -16,6 +17,7 @@ interface OddOneOutProps {
 }
 
 export default function OddOneOut({ onBack, onComplete }: OddOneOutProps) {
+  const { t } = useTranslation();
   const [gameState, setGameState] = useState<'intro' | 'playing' | 'feedback' | 'result' | 'reward'>('intro');
   const [rounds, setRounds] = useState<typeof ODD_ONE_OUT_ROUNDS>([]);
   const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
@@ -104,7 +106,7 @@ export default function OddOneOut({ onBack, onComplete }: OddOneOutProps) {
           className="flex items-center gap-2 text-white mb-8 hover:bg-white/20 px-4 py-2 rounded-full transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
-          Back to Exercises
+          {t('exerciseScreens.common.backToExercises')}
         </motion.button>
 
         <AnimatePresence mode="wait">
@@ -124,13 +126,13 @@ export default function OddOneOut({ onBack, onComplete }: OddOneOutProps) {
               >
                 🔎
               </motion.div>
-              <h1 className="text-3xl font-bold text-text-primary mb-4">Odd One Out</h1>
+              <h1 className="text-3xl font-bold text-text-primary mb-4">{t('exercises.odd-one-out.name', { defaultValue: 'Odd One Out' })}</h1>
               <p className="text-text-secondary mb-6">
-                Find the word that's different from the others!
+                {t('exerciseScreens.oddOneOut.intro')}
               </p>
 
               <div className="bg-white/30 rounded-xl p-6 mb-8">
-                <h3 className="font-semibold text-text-primary mb-4">Example:</h3>
+                <h3 className="font-semibold text-text-primary mb-4">{t('exerciseScreens.oddOneOut.example')}</h3>
                 <div className="grid grid-cols-4 gap-2 max-w-md mx-auto mb-4">
                   <div className="py-3 px-4 bg-white rounded-lg text-xl font-bold text-text-primary">cat</div>
                   <div className="py-3 px-4 bg-white rounded-lg text-xl font-bold text-text-primary">cat</div>
@@ -138,7 +140,7 @@ export default function OddOneOut({ onBack, onComplete }: OddOneOutProps) {
                   <div className="py-3 px-4 bg-white rounded-lg text-xl font-bold text-text-primary">cat</div>
                 </div>
                 <p className="text-sm text-text-secondary">
-                  Look carefully - one word is slightly different!
+                  {t('exerciseScreens.oddOneOut.exampleHint')}
                 </p>
               </div>
 
@@ -149,7 +151,7 @@ export default function OddOneOut({ onBack, onComplete }: OddOneOutProps) {
                 className="bg-peach hover:bg-orange-300 text-white font-bold text-xl py-4 px-12 rounded-full shadow-lg flex items-center gap-3 mx-auto"
               >
                 <Play className="w-6 h-6" />
-                Start Game
+                {t('exerciseScreens.common.startGame')}
               </motion.button>
             </motion.div>
           )}
@@ -166,10 +168,10 @@ export default function OddOneOut({ onBack, onComplete }: OddOneOutProps) {
               {/* Progress */}
               <div className="flex justify-between items-center mb-6">
                 <span className="text-text-secondary">
-                  Round {currentRoundIndex + 1} of {rounds.length}
+                  {t('exerciseScreens.common.roundCounter', { current: currentRoundIndex + 1, total: rounds.length })}
                 </span>
                 <span className="text-text-primary font-bold">
-                  Score: {score}
+                  {t('exerciseScreens.common.score', { score })}
                 </span>
               </div>
 
@@ -183,7 +185,7 @@ export default function OddOneOut({ onBack, onComplete }: OddOneOutProps) {
 
               {/* Instruction */}
               <p className="text-center text-text-primary text-xl mb-8">
-                Which word is different?
+                {t('exerciseScreens.oddOneOut.whichDifferent')}
               </p>
 
               {/* Word Cards */}
@@ -233,10 +235,10 @@ export default function OddOneOut({ onBack, onComplete }: OddOneOutProps) {
                   className="text-center"
                 >
                   {isCorrect ? (
-                    <p className="text-xl font-bold text-green-500">Correct! Well spotted!</p>
+                    <p className="text-xl font-bold text-green-500">{t('exerciseScreens.oddOneOut.correctFeedback')}</p>
                   ) : (
                     <p className="text-xl font-bold text-red-500">
-                      Not quite! The answer was "{currentRound.words[currentRound.answer]}"
+                      {t('exerciseScreens.oddOneOut.wrongFeedback', { answer: currentRound.words[currentRound.answer] })}
                     </p>
                   )}
                 </motion.div>
@@ -252,12 +254,12 @@ export default function OddOneOut({ onBack, onComplete }: OddOneOutProps) {
               animate={{ opacity: 1, scale: 1 }}
               className="glass-card p-8 text-center"
             >
-              <h2 className="text-3xl font-bold text-text-primary mb-4">Game Complete!</h2>
+              <h2 className="text-3xl font-bold text-text-primary mb-4">{t('exerciseScreens.common.gameComplete')}</h2>
               <div className="text-6xl font-bold text-peach mb-4">
                 {Math.round((score / rounds.length) * 100)}%
               </div>
               <p className="text-text-secondary mb-8">
-                You found {score} out of {rounds.length} odd words!
+                {t('exerciseScreens.oddOneOut.resultSummary', { score, total: rounds.length })}
               </p>
 
               <div className="flex gap-4 justify-center">
@@ -267,7 +269,7 @@ export default function OddOneOut({ onBack, onComplete }: OddOneOutProps) {
                   onClick={initializeGame}
                   className="bg-peach hover:bg-orange-300 text-white font-bold py-3 px-8 rounded-full"
                 >
-                  Play Again
+                  {t('exerciseScreens.common.playAgain')}
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -275,7 +277,7 @@ export default function OddOneOut({ onBack, onComplete }: OddOneOutProps) {
                   onClick={onBack}
                   className="bg-white/50 hover:bg-white/70 text-text-primary font-bold py-3 px-8 rounded-full"
                 >
-                  Back to Hub
+                  {t('exerciseScreens.common.backToHub')}
                 </motion.button>
               </div>
             </motion.div>

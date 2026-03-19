@@ -6,6 +6,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Play, CheckCircle, XCircle, HandMetal } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { SYLLABLE_WORDS } from '@/data/exercises';
 import RewardAnimation from '../RewardAnimation';
 import { recordExerciseCompletion, UserProgress } from '@/lib/exerciseStorage';
@@ -16,6 +17,7 @@ interface SyllableGameProps {
 }
 
 export default function SyllableGame({ onBack, onComplete }: SyllableGameProps) {
+  const { t } = useTranslation();
   const [gameState, setGameState] = useState<'intro' | 'playing' | 'result' | 'reward'>('intro');
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [words, setWords] = useState<typeof SYLLABLE_WORDS>([]);
@@ -183,7 +185,7 @@ export default function SyllableGame({ onBack, onComplete }: SyllableGameProps) 
           className="flex items-center gap-2 text-white mb-8 hover:bg-white/20 px-4 py-2 rounded-full transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
-          Back to Exercises
+          {t('exerciseScreens.common.backToExercises')}
         </motion.button>
 
         <AnimatePresence mode="wait">
@@ -203,13 +205,13 @@ export default function SyllableGame({ onBack, onComplete }: SyllableGameProps) 
               >
                 ✂️
               </motion.div>
-              <h1 className="text-3xl font-bold text-text-primary mb-4">Syllable Splitter</h1>
+              <h1 className="text-3xl font-bold text-text-primary mb-4">{t('exercises.syllable-game.name', { defaultValue: 'Syllable Splitter' })}</h1>
               <p className="text-text-secondary mb-6">
-                Click between letters to split words into syllables!
+                {t('exerciseScreens.syllableGame.intro')}
               </p>
 
               <div className="bg-white/30 rounded-xl p-6 mb-8">
-                <h3 className="font-semibold text-text-primary mb-4">How to Play:</h3>
+                <h3 className="font-semibold text-text-primary mb-4">{t('exerciseScreens.common.howToPlay')}</h3>
                 <div className="flex items-center justify-center gap-2 mb-4">
                   <span className="text-3xl font-bold text-text-primary">but</span>
                   <div className="w-4 h-10 bg-mint rounded flex items-center justify-center">
@@ -222,7 +224,7 @@ export default function SyllableGame({ onBack, onComplete }: SyllableGameProps) 
                   <span className="text-3xl font-bold text-text-primary">fly</span>
                 </div>
                 <p className="text-sm text-text-secondary">
-                  Clap your hands for each syllable to help you count!
+                  {t('exerciseScreens.syllableGame.hint')}
                 </p>
                 <HandMetal className="w-8 h-8 text-text-secondary mx-auto mt-2" />
               </div>
@@ -234,7 +236,7 @@ export default function SyllableGame({ onBack, onComplete }: SyllableGameProps) 
                 className="bg-lavender hover:bg-purple-400 text-white font-bold text-xl py-4 px-12 rounded-full shadow-lg flex items-center gap-3 mx-auto"
               >
                 <Play className="w-6 h-6" />
-                Start Game
+                {t('exerciseScreens.common.startGame')}
               </motion.button>
             </motion.div>
           )}
@@ -251,10 +253,10 @@ export default function SyllableGame({ onBack, onComplete }: SyllableGameProps) 
               {/* Progress */}
               <div className="flex justify-between items-center mb-6">
                 <span className="text-text-secondary">
-                  Word {currentWordIndex + 1} of {words.length}
+                  {t('exerciseScreens.common.wordCounter', { current: currentWordIndex + 1, total: words.length })}
                 </span>
                 <span className="text-text-primary font-bold">
-                  Score: {score}
+                  {t('exerciseScreens.common.score', { score })}
                 </span>
               </div>
 
@@ -268,7 +270,7 @@ export default function SyllableGame({ onBack, onComplete }: SyllableGameProps) 
 
               {/* Instruction */}
               <p className="text-center text-text-secondary mb-8">
-                Click between letters to separate syllables
+                {t('exerciseScreens.syllableGame.instruction')}
               </p>
 
               {/* Word Display */}
@@ -279,7 +281,7 @@ export default function SyllableGame({ onBack, onComplete }: SyllableGameProps) 
               {/* Syllable count display */}
               <div className="text-center mb-8">
                 <span className="text-text-secondary">
-                  Syllables marked: {userSyllables.length + 1}
+                  {t('exerciseScreens.syllableGame.syllablesMarked', { count: userSyllables.length + 1 })}
                 </span>
               </div>
 
@@ -293,13 +295,13 @@ export default function SyllableGame({ onBack, onComplete }: SyllableGameProps) 
                   {isCorrect ? (
                     <div>
                       <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-2" />
-                      <p className="text-xl font-bold text-green-500">Perfect!</p>
+                      <p className="text-xl font-bold text-green-500">{t('exerciseScreens.common.perfect')}</p>
                     </div>
                   ) : (
                     <div>
                       <XCircle className="w-16 h-16 text-red-400 mx-auto mb-2" />
-                      <p className="text-xl font-bold text-red-400 mb-2">Not quite!</p>
-                      <p className="text-text-secondary mb-2">The correct syllables are:</p>
+                      <p className="text-xl font-bold text-red-400 mb-2">{t('exerciseScreens.common.notQuite')}</p>
+                      <p className="text-text-secondary mb-2">{t('exerciseScreens.syllableGame.correctSyllables')}</p>
                       {renderCorrectSyllables()}
                     </div>
                   )}
@@ -315,7 +317,7 @@ export default function SyllableGame({ onBack, onComplete }: SyllableGameProps) 
                     onClick={checkAnswer}
                     className="bg-mint hover:bg-green-400 text-white font-bold py-4 px-12 rounded-full shadow-lg"
                   >
-                    Check Answer
+                    {t('exerciseScreens.common.checkAnswer')}
                   </motion.button>
                 ) : (
                   <motion.button
@@ -324,7 +326,7 @@ export default function SyllableGame({ onBack, onComplete }: SyllableGameProps) 
                     onClick={nextWord}
                     className="bg-soft-blue hover:bg-blue-400 text-white font-bold py-4 px-12 rounded-full shadow-lg"
                   >
-                    {currentWordIndex < words.length - 1 ? 'Next Word' : 'See Results'}
+                    {currentWordIndex < words.length - 1 ? t('exerciseScreens.common.nextWord') : t('exerciseScreens.common.seeResults')}
                   </motion.button>
                 )}
               </div>
@@ -339,12 +341,12 @@ export default function SyllableGame({ onBack, onComplete }: SyllableGameProps) 
               animate={{ opacity: 1, scale: 1 }}
               className="glass-card p-8 text-center"
             >
-              <h2 className="text-3xl font-bold text-text-primary mb-4">Game Complete!</h2>
+              <h2 className="text-3xl font-bold text-text-primary mb-4">{t('exerciseScreens.common.gameComplete')}</h2>
               <div className="text-6xl font-bold text-lavender mb-4">
                 {Math.round((score / words.length) * 100)}%
               </div>
               <p className="text-text-secondary mb-8">
-                You split {score} out of {words.length} words correctly!
+                {t('exerciseScreens.syllableGame.resultSummary', { score, total: words.length })}
               </p>
 
               <div className="flex gap-4 justify-center">
@@ -354,7 +356,7 @@ export default function SyllableGame({ onBack, onComplete }: SyllableGameProps) 
                   onClick={initializeGame}
                   className="bg-lavender hover:bg-purple-400 text-white font-bold py-3 px-8 rounded-full"
                 >
-                  Play Again
+                  {t('exerciseScreens.common.playAgain')}
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -362,7 +364,7 @@ export default function SyllableGame({ onBack, onComplete }: SyllableGameProps) 
                   onClick={onBack}
                   className="bg-white/50 hover:bg-white/70 text-text-primary font-bold py-3 px-8 rounded-full"
                 >
-                  Back to Hub
+                  {t('exerciseScreens.common.backToHub')}
                 </motion.button>
               </div>
             </motion.div>

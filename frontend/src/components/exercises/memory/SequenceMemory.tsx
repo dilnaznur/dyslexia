@@ -6,6 +6,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Play, Heart, RotateCcw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { SEQUENCE_SHAPES, SEQUENCE_LEVELS } from '@/data/exercises';
 import RewardAnimation from '../RewardAnimation';
 import { recordExerciseCompletion, UserProgress } from '@/lib/exerciseStorage';
@@ -18,6 +19,7 @@ interface SequenceMemoryProps {
 type GamePhase = 'intro' | 'showing' | 'input' | 'feedback' | 'result' | 'reward';
 
 export default function SequenceMemory({ onBack, onComplete }: SequenceMemoryProps) {
+  const { t } = useTranslation();
   const [gameState, setGameState] = useState<GamePhase>('intro');
   const [currentLevel, setCurrentLevel] = useState(0);
   const [sequence, setSequence] = useState<number[]>([]);
@@ -161,7 +163,7 @@ export default function SequenceMemory({ onBack, onComplete }: SequenceMemoryPro
           className="flex items-center gap-2 text-white mb-8 hover:bg-white/20 px-4 py-2 rounded-full transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
-          Back to Exercises
+          {t('exerciseScreens.common.backToExercises')}
         </motion.button>
 
         <AnimatePresence mode="wait">
@@ -181,13 +183,13 @@ export default function SequenceMemory({ onBack, onComplete }: SequenceMemoryPro
               >
                 🎯
               </motion.div>
-              <h1 className="text-3xl font-bold text-text-primary mb-4">Sequence Memory</h1>
+              <h1 className="text-3xl font-bold text-text-primary mb-4">{t('exercises.sequence-memory.name', { defaultValue: 'Sequence Memory' })}</h1>
               <p className="text-text-secondary mb-6">
-                Watch the shapes light up, then repeat the sequence!
+                {t('exerciseScreens.sequenceMemory.intro')}
               </p>
 
               <div className="bg-white/30 rounded-xl p-6 mb-8">
-                <h3 className="font-semibold text-text-primary mb-4">How to Play:</h3>
+                <h3 className="font-semibold text-text-primary mb-4">{t('exerciseScreens.common.howToPlay')}</h3>
                 <div className="flex justify-center gap-2 mb-4">
                   {shapes.slice(0, 4).map((shape, i) => (
                     <motion.div
@@ -202,9 +204,9 @@ export default function SequenceMemory({ onBack, onComplete }: SequenceMemoryPro
                   ))}
                 </div>
                 <p className="text-sm text-text-secondary">
-                  Watch carefully, then click the shapes in the same order.
+                  {t('exerciseScreens.sequenceMemory.howToPlay1')}
                   <br />
-                  You have 3 lives!
+                  {t('exerciseScreens.sequenceMemory.howToPlay2')}
                 </p>
               </div>
 
@@ -215,7 +217,7 @@ export default function SequenceMemory({ onBack, onComplete }: SequenceMemoryPro
                 className="bg-mint hover:bg-green-400 text-white font-bold text-xl py-4 px-12 rounded-full shadow-lg flex items-center gap-3 mx-auto"
               >
                 <Play className="w-6 h-6" />
-                Start Game
+                {t('exerciseScreens.common.startGame')}
               </motion.button>
             </motion.div>
           )}
@@ -232,13 +234,13 @@ export default function SequenceMemory({ onBack, onComplete }: SequenceMemoryPro
               {/* Header */}
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-2">
-                  <span className="text-text-secondary">Level {currentLevel + 1}</span>
+                  <span className="text-text-secondary">{t('exerciseScreens.sequenceMemory.level', { level: currentLevel + 1 })}</span>
                   <span className="text-xs text-text-secondary/70">
-                    ({level.sequenceLength} shapes)
+                    {t('exerciseScreens.sequenceMemory.shapeCount', { count: level.sequenceLength })}
                   </span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="text-text-primary font-bold">Score: {score}</span>
+                  <span className="text-text-primary font-bold">{t('exerciseScreens.common.score', { score })}</span>
                   <div className="flex gap-1">
                     {[...Array(3)].map((_, i) => (
                       <Heart
@@ -265,7 +267,7 @@ export default function SequenceMemory({ onBack, onComplete }: SequenceMemoryPro
                       exit={{ opacity: 0 }}
                       className="text-xl text-text-primary font-medium"
                     >
-                      Watch carefully...
+                      {t('exerciseScreens.common.watchCarefully')}
                     </motion.p>
                   )}
                   {gameState === 'input' && (
@@ -276,7 +278,7 @@ export default function SequenceMemory({ onBack, onComplete }: SequenceMemoryPro
                       exit={{ opacity: 0 }}
                       className="text-xl text-text-primary font-medium"
                     >
-                      Your turn! ({userSequence.length}/{sequence.length})
+                      {t('exerciseScreens.sequenceMemory.yourTurn', { current: userSequence.length, total: sequence.length })}
                     </motion.p>
                   )}
                   {gameState === 'feedback' && (
@@ -287,9 +289,9 @@ export default function SequenceMemory({ onBack, onComplete }: SequenceMemoryPro
                       exit={{ opacity: 0 }}
                     >
                       {isCorrect ? (
-                        <p className="text-xl text-green-500 font-bold">Perfect!</p>
+                        <p className="text-xl text-green-500 font-bold">{t('exerciseScreens.common.perfect')}</p>
                       ) : (
-                        <p className="text-xl text-red-500 font-bold">Oops! Try again</p>
+                        <p className="text-xl text-red-500 font-bold">{t('exerciseScreens.sequenceMemory.oopsTryAgain')}</p>
                       )}
                     </motion.div>
                   )}
@@ -351,13 +353,13 @@ export default function SequenceMemory({ onBack, onComplete }: SequenceMemoryPro
               animate={{ opacity: 1, scale: 1 }}
               className="glass-card p-8 text-center"
             >
-              <h2 className="text-3xl font-bold text-text-primary mb-4">Great Memory!</h2>
+              <h2 className="text-3xl font-bold text-text-primary mb-4">{t('exerciseScreens.sequenceMemory.resultTitle')}</h2>
               <div className="text-6xl font-bold text-mint mb-4">
                 {score}
               </div>
-              <p className="text-text-secondary mb-2">Points earned</p>
+              <p className="text-text-secondary mb-2">{t('exerciseScreens.common.pointsEarned')}</p>
               <p className="text-text-secondary mb-8">
-                You reached level {currentLevel + 1}!
+                {t('exerciseScreens.sequenceMemory.resultSummary', { level: currentLevel + 1 })}
               </p>
 
               <div className="flex gap-4 justify-center">
@@ -367,7 +369,7 @@ export default function SequenceMemory({ onBack, onComplete }: SequenceMemoryPro
                   onClick={initializeGame}
                   className="bg-mint hover:bg-green-400 text-white font-bold py-3 px-8 rounded-full"
                 >
-                  Play Again
+                  {t('exerciseScreens.common.playAgain')}
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -375,7 +377,7 @@ export default function SequenceMemory({ onBack, onComplete }: SequenceMemoryPro
                   onClick={onBack}
                   className="bg-white/50 hover:bg-white/70 text-text-primary font-bold py-3 px-8 rounded-full"
                 >
-                  Back to Hub
+                  {t('exerciseScreens.common.backToHub')}
                 </motion.button>
               </div>
             </motion.div>
