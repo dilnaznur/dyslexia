@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { Star, Trophy, Flame, Sparkles } from 'lucide-react';
 import { Badge, getBadgeInfo } from '@/lib/exerciseStorage';
-import { getRandomEncouragement } from '@/data/exercises';
+import { useTranslation } from 'react-i18next';
+import { getExerciseLanguage, getRandomEncouragement } from '@/data/exercises';
 
 interface RewardAnimationProps {
   type: 'stars' | 'badge' | 'completion' | 'perfect';
@@ -17,11 +18,13 @@ interface RewardAnimationProps {
 }
 
 export default function RewardAnimation({ type, stars = 0, badge, onComplete }: RewardAnimationProps) {
+  const { t, i18n } = useTranslation();
+  const exerciseLang = getExerciseLanguage(i18n.language);
   const [message, setMessage] = useState('');
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    setMessage(getRandomEncouragement());
+    setMessage(getRandomEncouragement(exerciseLang));
 
     // Trigger confetti for perfect scores and completions
     if (type === 'perfect' || type === 'completion') {
@@ -37,7 +40,7 @@ export default function RewardAnimation({ type, stars = 0, badge, onComplete }: 
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [type, onComplete]);
+  }, [type, onComplete, exerciseLang]);
 
   const triggerConfetti = () => {
     // First burst
@@ -70,6 +73,14 @@ export default function RewardAnimation({ type, stars = 0, badge, onComplete }: 
   const renderContent = () => {
     switch (type) {
       case 'stars':
+        const starsTitle =
+          stars === 3
+            ? t('exerciseScreens.reward.stars3Title')
+            : stars === 2
+            ? t('exerciseScreens.reward.stars2Title')
+            : stars === 1
+            ? t('exerciseScreens.reward.stars1Title')
+            : t('exerciseScreens.reward.stars0Title');
         return (
           <div className="text-center">
             <div className="flex justify-center gap-2 mb-4">
@@ -98,7 +109,7 @@ export default function RewardAnimation({ type, stars = 0, badge, onComplete }: 
               transition={{ delay: 0.8 }}
               className="text-2xl font-bold text-white"
             >
-              {stars === 3 ? 'Perfect Score!' : stars === 2 ? 'Great Job!' : stars === 1 ? 'Good Try!' : 'Keep Practicing!'}
+              {starsTitle}
             </motion.p>
             <motion.p
               initial={{ y: 20, opacity: 0 }}
@@ -130,7 +141,7 @@ export default function RewardAnimation({ type, stars = 0, badge, onComplete }: 
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.5 }}
             >
-              <p className="text-sm text-white/80 uppercase tracking-wide">New Badge!</p>
+              <p className="text-sm text-white/80 uppercase tracking-wide">{t('exerciseScreens.reward.newBadge')}</p>
               <h3 className="text-2xl font-bold text-white mt-1">{badgeInfo.name}</h3>
               <p className="text-white/80 mt-2">{badgeInfo.description}</p>
             </motion.div>
@@ -156,7 +167,7 @@ export default function RewardAnimation({ type, stars = 0, badge, onComplete }: 
               transition={{ delay: 0.3 }}
               className="text-2xl font-bold text-white"
             >
-              Exercise Complete!
+              {t('exerciseScreens.reward.exerciseComplete')}
             </motion.p>
             <motion.p
               initial={{ y: 20, opacity: 0 }}
@@ -200,7 +211,7 @@ export default function RewardAnimation({ type, stars = 0, badge, onComplete }: 
               transition={{ delay: 0.8 }}
               className="text-2xl font-bold text-white"
             >
-              Perfect Score!
+              {t('exerciseScreens.reward.perfectScore')}
             </motion.p>
             <motion.p
               initial={{ y: 20, opacity: 0 }}
@@ -208,7 +219,7 @@ export default function RewardAnimation({ type, stars = 0, badge, onComplete }: 
               transition={{ delay: 1 }}
               className="text-lg text-white/80 mt-2"
             >
-              You're absolutely amazing!
+              {t('exerciseScreens.reward.youAreAmazing')}
             </motion.p>
           </div>
         );

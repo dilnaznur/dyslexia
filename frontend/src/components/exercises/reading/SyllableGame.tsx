@@ -7,7 +7,7 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Play, CheckCircle, XCircle, HandMetal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { SYLLABLE_WORDS } from '@/data/exercises';
+import { EXERCISE_CONTENT, getExerciseLanguage } from '@/data/exercises';
 import RewardAnimation from '../RewardAnimation';
 import { recordExerciseCompletion, UserProgress } from '@/lib/exerciseStorage';
 
@@ -17,10 +17,14 @@ interface SyllableGameProps {
 }
 
 export default function SyllableGame({ onBack, onComplete }: SyllableGameProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const exerciseLang = getExerciseLanguage(i18n.language);
+  const exampleWord =
+    EXERCISE_CONTENT.syllableGame[exerciseLang].words.find((w) => w.syllables.length >= 3) ||
+    EXERCISE_CONTENT.syllableGame[exerciseLang].words[0];
   const [gameState, setGameState] = useState<'intro' | 'playing' | 'result' | 'reward'>('intro');
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [words, setWords] = useState<typeof SYLLABLE_WORDS>([]);
+  const [words, setWords] = useState<Array<{ word: string; syllables: string[] }>>([]);
   const [userSyllables, setUserSyllables] = useState<number[]>([]);
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
@@ -29,14 +33,16 @@ export default function SyllableGame({ onBack, onComplete }: SyllableGameProps) 
 
   // Initialize the game
   const initializeGame = useCallback(() => {
-    const shuffled = [...SYLLABLE_WORDS].sort(() => Math.random() - 0.5).slice(0, 8);
+    const shuffled = [...EXERCISE_CONTENT.syllableGame[exerciseLang].words]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 8);
     setWords(shuffled);
     setCurrentWordIndex(0);
     setScore(0);
     setUserSyllables([]);
     setShowResult(false);
     setGameState('playing');
-  }, []);
+  }, [exerciseLang]);
 
   const currentWord = words[currentWordIndex];
 
@@ -213,15 +219,16 @@ export default function SyllableGame({ onBack, onComplete }: SyllableGameProps) 
               <div className="bg-white/30 rounded-xl p-6 mb-8">
                 <h3 className="font-semibold text-text-primary mb-4">{t('exerciseScreens.common.howToPlay')}</h3>
                 <div className="flex items-center justify-center gap-2 mb-4">
-                  <span className="text-3xl font-bold text-text-primary">but</span>
-                  <div className="w-4 h-10 bg-mint rounded flex items-center justify-center">
-                    <div className="w-1 h-8 bg-white rounded-full" />
-                  </div>
-                  <span className="text-3xl font-bold text-text-primary">ter</span>
-                  <div className="w-4 h-10 bg-mint rounded flex items-center justify-center">
-                    <div className="w-1 h-8 bg-white rounded-full" />
-                  </div>
-                  <span className="text-3xl font-bold text-text-primary">fly</span>
+                  {exampleWord.syllables.map((syllable, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <span className="text-3xl font-bold text-text-primary">{syllable}</span>
+                      {index < exampleWord.syllables.length - 1 && (
+                        <div className="w-4 h-10 bg-mint rounded flex items-center justify-center">
+                          <div className="w-1 h-8 bg-white rounded-full" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
                 <p className="text-sm text-text-secondary">
                   {t('exerciseScreens.syllableGame.hint')}

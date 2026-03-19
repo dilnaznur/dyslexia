@@ -356,46 +356,46 @@ function generateCombinedExplanation(
     const response = writingData.gemini_response.toLowerCase();
     
     if (response.includes('reversal') || response.includes('mirror')) {
-      const indicator = 'Letter reversal patterns noted in handwriting';
+      const indicator = 'results.handwriting.description';
       primaryFactors.push(indicator);
       writingIndicators.push(indicator);
     }
     
     if (response.includes('spacing') || response.includes('inconsistent')) {
-      const indicator = 'Irregular letter spacing observed';
+      const indicator = 'results.indicators.handwriting.spacing';
       writingIndicators.push(indicator);
     }
     
     if (response.includes('tremor') || response.includes('shaky')) {
-      const indicator = 'Hand tremor detected in writing';
+      const indicator = 'results.indicators.handwriting.tremor';
       writingIndicators.push(indicator);
     }
     
     // If no specific issues found, add general indicator
     if (writingIndicators.length === 0) {
-      writingIndicators.push('Handwriting assessment completed - no significant concerns');
+      writingIndicators.push('results.indicators.handwriting.noConcerns');
     }
   }
 
   // Behavioral indicators
   if (chatbotData) {
     if (chatbotData.memory_score < 5) {
-      const indicator = 'Below-average memory recall';
+      const indicator = 'results.indicators.behavioral.lowMemory';
       primaryFactors.push(indicator);
       behavioralIndicators.push(indicator);
     }
     if (chatbotData.attention_score < 5) {
-      const indicator = 'Attention challenges observed';
+      const indicator = 'results.indicators.behavioral.attentionChallenges';
       behavioralIndicators.push(indicator);
     }
     if (chatbotData.comprehension_score < 5) {
-      const indicator = 'Comprehension difficulties noted';
+      const indicator = 'results.indicators.behavioral.comprehensionDifficulties';
       behavioralIndicators.push(indicator);
     }
     
     // If all scores are good, add positive indicator
     if (behavioralIndicators.length === 0) {
-      behavioralIndicators.push('Good cognitive engagement and comprehension');
+      behavioralIndicators.push('results.chatbot.description');
     }
   }
 

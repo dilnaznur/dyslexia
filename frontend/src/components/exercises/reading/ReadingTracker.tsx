@@ -7,7 +7,7 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Play, ChevronUp, ChevronDown, CheckCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { READING_PASSAGES } from '@/data/exercises';
+import { EXERCISE_CONTENT, getExerciseLanguage } from '@/data/exercises';
 import RewardAnimation from '../RewardAnimation';
 import { recordExerciseCompletion, UserProgress } from '@/lib/exerciseStorage';
 
@@ -18,12 +18,24 @@ interface ReadingTrackerProps {
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 
+type TrueFalseQuestion = { question: string; correct: boolean };
+
+type ReadingPassage = {
+  id: string;
+  title: string;
+  lines: string[];
+  difficulty: Difficulty;
+};
+
 export default function ReadingTracker({ onBack, onComplete }: ReadingTrackerProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const exerciseLang = getExerciseLanguage(i18n.language);
+  const passages = EXERCISE_CONTENT.readingTracker[exerciseLang].passages as ReadingPassage[];
+  const quizById = EXERCISE_CONTENT.readingTracker[exerciseLang].quiz as Record<string, TrueFalseQuestion[]>;
   const [gameState, setGameState] = useState<'intro' | 'reading' | 'quiz' | 'result' | 'reward'>('intro');
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
-  const [passage, setPassage] = useState<typeof READING_PASSAGES[0] | null>(null);
+  const [passage, setPassage] = useState<ReadingPassage | null>(null);
   const [quizAnswers, setQuizAnswers] = useState<boolean[]>([]);
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -31,29 +43,12 @@ export default function ReadingTracker({ onBack, onComplete }: ReadingTrackerPro
 
   // Quiz questions based on passage
   const getQuizQuestions = (passageId: string) => {
-    const questions: Record<string, { question: string; correct: boolean }[]> = {
-      'story-1': [
-        { question: 'Max was a happy dog.', correct: true },
-        { question: 'Max liked to play at home.', correct: false },
-        { question: "Max's favorite toy was a red ball.", correct: true },
-      ],
-      'story-2': [
-        { question: 'The flowers in the garden could talk.', correct: true },
-        { question: 'The sunflowers were small and shy.', correct: false },
-        { question: "A girl named Lily visited the garden.", correct: true },
-      ],
-      'story-3': [
-        { question: 'Captain Luna was on a spaceship.', correct: true },
-        { question: 'They had been to this planet before.', correct: false },
-        { question: 'Beeper was a robot friend.', correct: true },
-      ],
-    };
-    return questions[passageId] || [];
+    return quizById[passageId] || [];
   };
 
   // Initialize the game
   const initializeGame = useCallback(() => {
-    const selectedPassage = READING_PASSAGES.find((p) => p.difficulty === difficulty);
+    const selectedPassage = passages.find((p) => p.difficulty === difficulty);
     if (selectedPassage) {
       setPassage(selectedPassage);
       setCurrentLineIndex(0);
@@ -62,7 +57,7 @@ export default function ReadingTracker({ onBack, onComplete }: ReadingTrackerPro
       setScore(0);
       setGameState('reading');
     }
-  }, [difficulty]);
+  }, [difficulty, passages]);
 
   // Handle line navigation
   const moveToNextLine = () => {
@@ -163,7 +158,7 @@ export default function ReadingTracker({ onBack, onComplete }: ReadingTrackerPro
                 <h3 className="text-lg font-semibold text-text-primary mb-4">{t('exerciseScreens.readingTracker.chooseStory')}</h3>
                 <div className="flex gap-4 justify-center flex-wrap">
                   {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => {
-                    const p = READING_PASSAGES.find((passage) => passage.difficulty === d);
+                    const p = passages.find((passage) => passage.difficulty === d);
                     return (
                       <motion.button
                         key={d}

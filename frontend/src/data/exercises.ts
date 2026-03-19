@@ -4,6 +4,15 @@
  * Evidence-based exercises designed for children ages 5-10
  */
 
+export type ExerciseLanguage = 'en' | 'ru' | 'kz';
+
+export function getExerciseLanguage(language: string | undefined): ExerciseLanguage {
+  const base = (language || 'en').split('-')[0].toLowerCase();
+  if (base === 'ru') return 'ru';
+  if (base === 'kk' || base === 'kz') return 'kz';
+  return 'en';
+}
+
 /**
  * Word Flash Exercise Data
  * Evidence: Rapid Automatized Naming (RAN) improves reading fluency
@@ -319,6 +328,561 @@ export const SOUND_MATCHING_ROUNDS = [
   },
 ];
 
+type Difficulty = 'easy' | 'medium' | 'hard';
+
+type SyllableWord = { word: string; syllables: string[]; difficulty: Difficulty };
+type ReadingPassage = {
+  id: 'story-1' | 'story-2' | 'story-3';
+  title: string;
+  lines: string[];
+  difficulty: Difficulty;
+};
+type TrueFalseQuestion = { question: string; correct: boolean };
+
+type OddOneOutRound = { words: [string, string, string, string]; answer: number; difficulty: Difficulty };
+type SoundMatchingRound = {
+  targetWord: string;
+  options: Array<{ word: string; emoji: string; isMatch: boolean }>;
+  matchType: 'rhyme' | 'start';
+  difficulty: Difficulty;
+};
+
+export const EXERCISE_CONTENT: Record<
+  'wordFlash' | 'syllableGame' | 'readingTracker' | 'oddOneOut' | 'soundMatching' | 'encouragements',
+  any
+> = {
+  wordFlash: {
+    en: {
+      easy: ['the', 'and', 'cat', 'dog', 'run', 'big', 'red', 'sun', 'fun', 'hat'],
+      medium: ['happy', 'jump', 'blue', 'green', 'small', 'fast', 'play', 'read', 'book', 'tree'],
+      hard: ['butterfly', 'elephant', 'rainbow', 'beautiful', 'wonderful', 'adventure', 'together', 'important', 'different', 'remember'],
+    },
+    ru: {
+      easy: ['кот', 'пёс', 'дом', 'мяч', 'бег', 'большой', 'красный', 'солнце', 'весело', 'шляпа'],
+      medium: ['счастливый', 'прыгать', 'синий', 'зелёный', 'маленький', 'быстро', 'играть', 'читать', 'книга', 'дерево'],
+      hard: ['бабочка', 'слон', 'радуга', 'красивый', 'чудесный', 'приключение', 'вместе', 'важный', 'разный', 'помнить'],
+    },
+    kz: {
+      easy: ['мысық', 'ит', 'үй', 'доп', 'жүгіру', 'үлкен', 'қызыл', 'күн', 'қуаныш', 'баскиім'],
+      medium: ['бақытты', 'секіру', 'көк', 'жасыл', 'кіші', 'жылдам', 'ойнау', 'оқу', 'кітап', 'ағаш'],
+      hard: ['көбелек', 'піл', 'кемпірқосақ', 'әдемі', 'тамаша', 'шытырман', 'бірге', 'маңызды', 'әртүрлі', 'есте сақтау'],
+    },
+  },
+
+  syllableGame: {
+    en: {
+      words: [
+        { word: 'cat', syllables: ['cat'], difficulty: 'easy' },
+        { word: 'rabbit', syllables: ['rab', 'bit'], difficulty: 'easy' },
+        { word: 'rainbow', syllables: ['rain', 'bow'], difficulty: 'easy' },
+        { word: 'banana', syllables: ['ba', 'na', 'na'], difficulty: 'easy' },
+        { word: 'butterfly', syllables: ['but', 'ter', 'fly'], difficulty: 'medium' },
+        { word: 'elephant', syllables: ['el', 'e', 'phant'], difficulty: 'medium' },
+        { word: 'dinosaur', syllables: ['di', 'no', 'saur'], difficulty: 'medium' },
+        { word: 'watermelon', syllables: ['wa', 'ter', 'mel', 'on'], difficulty: 'hard' },
+        { word: 'helicopter', syllables: ['hel', 'i', 'cop', 'ter'], difficulty: 'hard' },
+        { word: 'caterpillar', syllables: ['cat', 'er', 'pil', 'lar'], difficulty: 'hard' },
+      ] satisfies SyllableWord[],
+    },
+    ru: {
+      words: [
+        { word: 'кот', syllables: ['кот'], difficulty: 'easy' },
+        { word: 'мама', syllables: ['ма', 'ма'], difficulty: 'easy' },
+        { word: 'радуга', syllables: ['ра', 'ду', 'га'], difficulty: 'easy' },
+        { word: 'банан', syllables: ['ба', 'нан'], difficulty: 'easy' },
+        { word: 'бабочка', syllables: ['ба', 'бо', 'чка'], difficulty: 'medium' },
+        { word: 'слон', syllables: ['слон'], difficulty: 'medium' },
+        { word: 'динозавр', syllables: ['ди', 'но', 'завр'], difficulty: 'medium' },
+        { word: 'арбуз', syllables: ['ар', 'буз'], difficulty: 'hard' },
+        { word: 'вертолёт', syllables: ['вер', 'то', 'лёт'], difficulty: 'hard' },
+        { word: 'гусеница', syllables: ['гу', 'се', 'ни', 'ца'], difficulty: 'hard' },
+      ] satisfies SyllableWord[],
+    },
+    kz: {
+      words: [
+        { word: 'бала', syllables: ['ба', 'ла'], difficulty: 'easy' },
+        { word: 'қала', syllables: ['қа', 'ла'], difficulty: 'easy' },
+        { word: 'шала', syllables: ['ша', 'ла'], difficulty: 'easy' },
+        { word: 'кітап', syllables: ['кі', 'тап'], difficulty: 'easy' },
+        { word: 'көбелек', syllables: ['кө', 'бе', 'лек'], difficulty: 'medium' },
+        { word: 'әдемі', syllables: ['ә', 'де', 'мі'], difficulty: 'medium' },
+        { word: 'терезе', syllables: ['те', 'ре', 'зе'], difficulty: 'medium' },
+        { word: 'қарбыз', syllables: ['қар', 'быз'], difficulty: 'hard' },
+        { word: 'кемпірқосақ', syllables: ['кем', 'пір', 'қо', 'сақ'], difficulty: 'hard' },
+        { word: 'есте сақтау', syllables: ['ес', 'те', 'сақ', 'тау'], difficulty: 'hard' },
+      ] satisfies SyllableWord[],
+    },
+  },
+
+  readingTracker: {
+    en: {
+      passages: [
+        {
+          id: 'story-1',
+          title: 'The Happy Dog',
+          lines: [
+            'Max was a happy little dog.',
+            'He loved to play in the park.',
+            'Every day, he would run and jump.',
+            'His favorite toy was a red ball.',
+            'Max had many friends at the park.',
+            'They would play together all day long.',
+          ],
+          difficulty: 'easy',
+        },
+        {
+          id: 'story-2',
+          title: 'The Magic Garden',
+          lines: [
+            'Once upon a time, there was a garden.',
+            'In this garden, flowers could talk.',
+            'The roses were red and very kind.',
+            'A little girl named Lily found the garden.',
+            'She visited every day to hear their stories.',
+            'The flowers taught her to be a good friend.',
+          ],
+          difficulty: 'medium',
+        },
+        {
+          id: 'story-3',
+          title: 'Space Adventure',
+          lines: [
+            'Captain Luna looked out the spaceship window.',
+            'The stars sparkled like diamonds in the dark.',
+            'Today was a special day for the crew.',
+            'They were going to land on a new planet.',
+            'Her robot friend, Beeper, beeped happily.',
+            'Together, they would discover something amazing.',
+          ],
+          difficulty: 'hard',
+        },
+      ] satisfies ReadingPassage[],
+      quiz: {
+        'story-1': [
+          { question: 'Max was a happy dog.', correct: true },
+          { question: 'Max liked to play at home.', correct: false },
+          { question: "Max's favorite toy was a red ball.", correct: true },
+        ] satisfies TrueFalseQuestion[],
+        'story-2': [
+          { question: 'The flowers in the garden could talk.', correct: true },
+          { question: 'The roses were blue.', correct: false },
+          { question: 'A girl named Lily visited the garden.', correct: true },
+        ] satisfies TrueFalseQuestion[],
+        'story-3': [
+          { question: 'Captain Luna was on a spaceship.', correct: true },
+          { question: 'They had been to this planet before.', correct: false },
+          { question: 'Beeper was a robot friend.', correct: true },
+        ] satisfies TrueFalseQuestion[],
+      } as Record<string, TrueFalseQuestion[]>,
+    },
+    ru: {
+      passages: [
+        {
+          id: 'story-1',
+          title: 'Счастливый пёс',
+          lines: [
+            'Макс был весёлым маленьким псом.',
+            'Он любил играть в парке.',
+            'Каждый день он бегал и прыгал.',
+            'Его любимой игрушкой был красный мяч.',
+            'У Макса было много друзей в парке.',
+            'Они играли вместе целый день.',
+          ],
+          difficulty: 'easy',
+        },
+        {
+          id: 'story-2',
+          title: 'Волшебный сад',
+          lines: [
+            'Жил-был чудесный сад.',
+            'В этом саду цветы умели говорить.',
+            'Розы были красные и очень добрые.',
+            'Девочка Лиля нашла этот сад.',
+            'Она приходила каждый день слушать истории.',
+            'Цветы учили её быть хорошим другом.',
+          ],
+          difficulty: 'medium',
+        },
+        {
+          id: 'story-3',
+          title: 'Космическое приключение',
+          lines: [
+            'Капитан Луна смотрела в окно корабля.',
+            'Звёзды сияли в темноте.',
+            'Сегодня был особенный день для команды.',
+            'Они собирались сесть на новую планету.',
+            'Её робот-друг Бипер радостно пищал.',
+            'Вместе они откроют что-то удивительное.',
+          ],
+          difficulty: 'hard',
+        },
+      ] satisfies ReadingPassage[],
+      quiz: {
+        'story-1': [
+          { question: 'Макс был весёлым псом.', correct: true },
+          { question: 'Макс играл только дома.', correct: false },
+          { question: 'Любимой игрушкой Макса был красный мяч.', correct: true },
+        ] satisfies TrueFalseQuestion[],
+        'story-2': [
+          { question: 'Цветы в саду умели говорить.', correct: true },
+          { question: 'Розы были синие.', correct: false },
+          { question: 'Девочка Лиля нашла сад.', correct: true },
+        ] satisfies TrueFalseQuestion[],
+        'story-3': [
+          { question: 'Капитан Луна была на корабле.', correct: true },
+          { question: 'Они уже были на этой планете.', correct: false },
+          { question: 'Бипер был роботом-другом.', correct: true },
+        ] satisfies TrueFalseQuestion[],
+      } as Record<string, TrueFalseQuestion[]>,
+    },
+    kz: {
+      passages: [
+        {
+          id: 'story-1',
+          title: 'Көңілді ит',
+          lines: [
+            'Макс көңілді кішкентай ит еді.',
+            'Ол саябақта ойнағанды жақсы көрді.',
+            'Күн сайын ол жүгіріп, секіретін.',
+            'Ең сүйікті ойыншығы қызыл доп болды.',
+            'Саябақта оның достары көп еді.',
+            'Олар күні бойы бірге ойнайтын.',
+          ],
+          difficulty: 'easy',
+        },
+        {
+          id: 'story-2',
+          title: 'Сиқырлы бақ',
+          lines: [
+            'Ертеде бір әдемі бақ болыпты.',
+            'Ол бақта гүлдер сөйлей алады екен.',
+            'Раушандар қызыл әрі мейірімді болған.',
+            'Ләйлә атты кішкентай қыз бақты тауыпты.',
+            'Ол күнде келіп, әңгімелер тыңдайтын.',
+            'Гүлдер оған жақсы дос болуды үйреткен.',
+          ],
+          difficulty: 'medium',
+        },
+        {
+          id: 'story-3',
+          title: 'Ғарыш сапары',
+          lines: [
+            'Капитан Луна кеменің терезесінен қарады.',
+            'Жұлдыздар түнде жарқырап тұрды.',
+            'Бүгін команда үшін ерекше күн еді.',
+            'Олар жаңа планетаға қонбақ болды.',
+            'Робот-досы Бипер қуанып дыбыс шығарды.',
+            'Екеуі бірге керемет жаңалық ашады.',
+          ],
+          difficulty: 'hard',
+        },
+      ] satisfies ReadingPassage[],
+      quiz: {
+        'story-1': [
+          { question: 'Макс көңілді ит еді.', correct: true },
+          { question: 'Макс тек үйде ойнады.', correct: false },
+          { question: 'Макстың сүйікті ойыншығы қызыл доп болды.', correct: true },
+        ] satisfies TrueFalseQuestion[],
+        'story-2': [
+          { question: 'Бақтағы гүлдер сөйлей алды.', correct: true },
+          { question: 'Раушандар көк түсті болды.', correct: false },
+          { question: 'Ләйлә бақты тауыпты.', correct: true },
+        ] satisfies TrueFalseQuestion[],
+        'story-3': [
+          { question: 'Капитан Луна ғарыш кемесінде болды.', correct: true },
+          { question: 'Олар бұл планетаға бұрын барған.', correct: false },
+          { question: 'Бипер — робот-дос.', correct: true },
+        ] satisfies TrueFalseQuestion[],
+      } as Record<string, TrueFalseQuestion[]>,
+    },
+  },
+
+  oddOneOut: {
+    en: {
+      rounds: [
+        { words: ['cat', 'cat', 'cat', 'bat'], answer: 3, difficulty: 'easy' },
+        { words: ['dog', 'dog', 'log', 'dog'], answer: 2, difficulty: 'easy' },
+        { words: ['sun', 'sun', 'sun', 'run'], answer: 3, difficulty: 'easy' },
+        { words: ['hat', 'hot', 'hat', 'hat'], answer: 1, difficulty: 'easy' },
+        { words: ['was', 'saw', 'was', 'was'], answer: 1, difficulty: 'medium' },
+        { words: ['pot', 'pot', 'pot', 'top'], answer: 3, difficulty: 'medium' },
+        { words: ['god', 'dog', 'dog', 'dog'], answer: 0, difficulty: 'medium' },
+        { words: ['tap', 'pat', 'tap', 'tap'], answer: 1, difficulty: 'medium' },
+        { words: ['form', 'from', 'form', 'form'], answer: 1, difficulty: 'hard' },
+        { words: ['cloud', 'could', 'cloud', 'cloud'], answer: 1, difficulty: 'hard' },
+        { words: ['quiet', 'quiet', 'quite', 'quiet'], answer: 2, difficulty: 'hard' },
+        { words: ['angel', 'angle', 'angel', 'angel'], answer: 1, difficulty: 'hard' },
+      ] satisfies OddOneOutRound[],
+    },
+    ru: {
+      rounds: [
+        { words: ['кот', 'кот', 'кот', 'код'], answer: 3, difficulty: 'easy' },
+        { words: ['дом', 'дом', 'дом', 'дым'], answer: 3, difficulty: 'easy' },
+        { words: ['лук', 'лук', 'люк', 'лук'], answer: 2, difficulty: 'easy' },
+        { words: ['шар', 'шар', 'шар', 'шаг'], answer: 3, difficulty: 'easy' },
+        { words: ['сон', 'сон', 'сок', 'сон'], answer: 2, difficulty: 'medium' },
+        { words: ['мир', 'тир', 'мир', 'мир'], answer: 1, difficulty: 'medium' },
+        { words: ['лес', 'лёс', 'лес', 'лес'], answer: 1, difficulty: 'medium' },
+        { words: ['ток', 'кот', 'кот', 'кот'], answer: 0, difficulty: 'medium' },
+        { words: ['страна', 'сторона', 'страна', 'страна'], answer: 1, difficulty: 'hard' },
+        { words: ['письмо', 'песмо', 'письмо', 'письмо'], answer: 1, difficulty: 'hard' },
+        { words: ['класс', 'клаcc', 'класс', 'класс'], answer: 1, difficulty: 'hard' },
+        { words: ['вместе', 'вмести', 'вместе', 'вместе'], answer: 1, difficulty: 'hard' },
+      ] satisfies OddOneOutRound[],
+    },
+    kz: {
+      rounds: [
+        { words: ['тал', 'тал', 'тал', 'бал'], answer: 3, difficulty: 'easy' },
+        { words: ['қол', 'қол', 'қол', 'жол'], answer: 3, difficulty: 'easy' },
+        { words: ['күн', 'күн', 'көн', 'күн'], answer: 2, difficulty: 'easy' },
+        { words: ['дос', 'дос', 'дос', 'тос'], answer: 3, difficulty: 'easy' },
+        { words: ['қала', 'қала', 'шала', 'қала'], answer: 2, difficulty: 'medium' },
+        { words: ['кітап', 'кітап', 'кітап', 'қитап'], answer: 3, difficulty: 'medium' },
+        { words: ['әдемі', 'әдемі', 'әдемі', 'әдеби'], answer: 3, difficulty: 'medium' },
+        { words: ['жасыл', 'жасыл', 'жазыл', 'жасыл'], answer: 2, difficulty: 'medium' },
+        { words: ['есте', 'есте', 'еске', 'есте'], answer: 2, difficulty: 'hard' },
+        { words: ['жылдам', 'жылдам', 'жылдам', 'жылдан'], answer: 3, difficulty: 'hard' },
+        { words: ['маңызды', 'маңызды', 'маңызды', 'мaңызды'], answer: 3, difficulty: 'hard' },
+        { words: ['керемет', 'керемет', 'керемет', 'кереметт'], answer: 3, difficulty: 'hard' },
+      ] satisfies OddOneOutRound[],
+    },
+  },
+
+  soundMatching: {
+    en: {
+      rounds: [
+        {
+          targetWord: 'cat',
+          options: [
+            { word: 'hat', emoji: '🎩', isMatch: true },
+            { word: 'dog', emoji: '🐕', isMatch: false },
+            { word: 'sun', emoji: '☀️', isMatch: false },
+          ],
+          matchType: 'rhyme',
+          difficulty: 'easy',
+        },
+        {
+          targetWord: 'ball',
+          options: [
+            { word: 'tall', emoji: '📏', isMatch: true },
+            { word: 'cat', emoji: '🐱', isMatch: false },
+            { word: 'bird', emoji: '🐦', isMatch: false },
+          ],
+          matchType: 'rhyme',
+          difficulty: 'easy',
+        },
+        {
+          targetWord: 'bed',
+          options: [
+            { word: 'bear', emoji: '🐻', isMatch: true },
+            { word: 'cat', emoji: '🐱', isMatch: false },
+            { word: 'dog', emoji: '🐕', isMatch: false },
+          ],
+          matchType: 'start',
+          difficulty: 'easy',
+        },
+        {
+          targetWord: 'moon',
+          options: [
+            { word: 'spoon', emoji: '🥄', isMatch: true },
+            { word: 'star', emoji: '⭐', isMatch: false },
+            { word: 'cloud', emoji: '☁️', isMatch: false },
+          ],
+          matchType: 'rhyme',
+          difficulty: 'medium',
+        },
+        {
+          targetWord: 'snake',
+          options: [
+            { word: 'star', emoji: '⭐', isMatch: true },
+            { word: 'bird', emoji: '🐦', isMatch: false },
+            { word: 'fish', emoji: '🐟', isMatch: false },
+          ],
+          matchType: 'start',
+          difficulty: 'medium',
+        },
+        {
+          targetWord: 'light',
+          options: [
+            { word: 'night', emoji: '🌙', isMatch: true },
+            { word: 'day', emoji: '☀️', isMatch: false },
+            { word: 'lamp', emoji: '💡', isMatch: false },
+          ],
+          matchType: 'rhyme',
+          difficulty: 'hard',
+        },
+      ] satisfies SoundMatchingRound[],
+    },
+    ru: {
+      rounds: [
+        {
+          targetWord: 'кот',
+          options: [
+            { word: 'рот', emoji: '👄', isMatch: true },
+            { word: 'дом', emoji: '🏠', isMatch: false },
+            { word: 'лес', emoji: '🌲', isMatch: false },
+          ],
+          matchType: 'rhyme',
+          difficulty: 'easy',
+        },
+        {
+          targetWord: 'мяч',
+          options: [
+            { word: 'врач', emoji: '🧑‍⚕️', isMatch: true },
+            { word: 'кот', emoji: '🐱', isMatch: false },
+            { word: 'снег', emoji: '❄️', isMatch: false },
+          ],
+          matchType: 'rhyme',
+          difficulty: 'easy',
+        },
+        {
+          targetWord: 'дом',
+          options: [
+            { word: 'дуб', emoji: '🌳', isMatch: true },
+            { word: 'кот', emoji: '🐱', isMatch: false },
+            { word: 'мяч', emoji: '⚽', isMatch: false },
+          ],
+          matchType: 'start',
+          difficulty: 'easy',
+        },
+        {
+          targetWord: 'луна',
+          options: [
+            { word: 'струна', emoji: '🎸', isMatch: true },
+            { word: 'трава', emoji: '🌿', isMatch: false },
+            { word: 'река', emoji: '🏞️', isMatch: false },
+          ],
+          matchType: 'rhyme',
+          difficulty: 'medium',
+        },
+        {
+          targetWord: 'снег',
+          options: [
+            { word: 'сова', emoji: '🦉', isMatch: true },
+            { word: 'мяч', emoji: '⚽', isMatch: false },
+            { word: 'кот', emoji: '🐱', isMatch: false },
+          ],
+          matchType: 'start',
+          difficulty: 'medium',
+        },
+        {
+          targetWord: 'ночь',
+          options: [
+            { word: 'дочь', emoji: '👧', isMatch: true },
+            { word: 'день', emoji: '☀️', isMatch: false },
+            { word: 'мост', emoji: '🌉', isMatch: false },
+          ],
+          matchType: 'rhyme',
+          difficulty: 'hard',
+        },
+      ] satisfies SoundMatchingRound[],
+    },
+    kz: {
+      rounds: [
+        {
+          targetWord: 'қала',
+          options: [
+            { word: 'шала', emoji: '🏙️', isMatch: true },
+            { word: 'үй', emoji: '🏠', isMatch: false },
+            { word: 'бақ', emoji: '🌳', isMatch: false },
+          ],
+          matchType: 'rhyme',
+          difficulty: 'easy',
+        },
+        {
+          targetWord: 'бала',
+          options: [
+            { word: 'дала', emoji: '🌾', isMatch: true },
+            { word: 'доп', emoji: '⚽', isMatch: false },
+            { word: 'су', emoji: '💧', isMatch: false },
+          ],
+          matchType: 'rhyme',
+          difficulty: 'easy',
+        },
+        {
+          targetWord: 'бас',
+          options: [
+            { word: 'бала', emoji: '🧒', isMatch: true },
+            { word: 'тас', emoji: '🪨', isMatch: false },
+            { word: 'ат', emoji: '🐴', isMatch: false },
+          ],
+          matchType: 'start',
+          difficulty: 'easy',
+        },
+        {
+          targetWord: 'күн',
+          options: [
+            { word: 'түн', emoji: '🌙', isMatch: true },
+            { word: 'жел', emoji: '💨', isMatch: false },
+            { word: 'қар', emoji: '❄️', isMatch: false },
+          ],
+          matchType: 'rhyme',
+          difficulty: 'medium',
+        },
+        {
+          targetWord: 'кітап',
+          options: [
+            { word: 'кеме', emoji: '🚢', isMatch: true },
+            { word: 'доп', emoji: '⚽', isMatch: false },
+            { word: 'үй', emoji: '🏠', isMatch: false },
+          ],
+          matchType: 'start',
+          difficulty: 'medium',
+        },
+        {
+          targetWord: 'жол',
+          options: [
+            { word: 'қол', emoji: '✋', isMatch: true },
+            { word: 'көл', emoji: '🏞️', isMatch: false },
+            { word: 'жел', emoji: '💨', isMatch: false },
+          ],
+          matchType: 'rhyme',
+          difficulty: 'hard',
+        },
+      ] satisfies SoundMatchingRound[],
+    },
+  },
+
+  encouragements: {
+    en: [
+      'Amazing work! 🌟',
+      "You're getting better every day! 🚀",
+      'Keep it up, superstar! ⭐',
+      'Wow, that was fast! ⚡',
+      'Fantastic job! 🎉',
+      "You're a learning champion! 🏆",
+      'Great thinking! 💡',
+      'Super smart! 🧠',
+      "You're doing great! 👏",
+      'Incredible progress! 📈',
+    ],
+    ru: [
+      'Отличная работа! 🌟',
+      'Ты становишься лучше каждый день! 🚀',
+      'Так держать, суперзвезда! ⭐',
+      'Вау, как быстро! ⚡',
+      'Прекрасно получилось! 🎉',
+      'Ты чемпион обучения! 🏆',
+      'Отличная мысль! 💡',
+      'Ты очень умный(ая)! 🧠',
+      'У тебя отлично выходит! 👏',
+      'Невероятный прогресс! 📈',
+    ],
+    kz: [
+      'Керемет жұмыс! 🌟',
+      'Күн сайын жақсарып келесің! 🚀',
+      'Жарайсың, суперстар! ⭐',
+      'Вау, өте жылдам! ⚡',
+      'Тамаша орындадың! 🎉',
+      'Сен оқу чемпионысың! 🏆',
+      'Өте жақсы ой! 💡',
+      'Сен өте ақылдысың! 🧠',
+      'Жақсы жасап жатырсың! 👏',
+      'Керемет өсім! 📈',
+    ],
+  },
+};
+
 /**
  * Exercise Categories for the hub
  */
@@ -441,22 +1005,13 @@ export const ALL_EXERCISES = [
 /**
  * Motivational messages
  */
-export const ENCOURAGEMENT_MESSAGES = [
-  "Amazing work! 🌟",
-  "You're getting better every day! 🚀",
-  "Keep it up, superstar! ⭐",
-  "Wow, that was fast! ⚡",
-  "Fantastic job! 🎉",
-  "You're a learning champion! 🏆",
-  "Great thinking! 💡",
-  "Super smart! 🧠",
-  "You're doing great! 👏",
-  "Incredible progress! 📈",
-];
+export const ENCOURAGEMENT_MESSAGES = EXERCISE_CONTENT.encouragements.en;
 
 /**
  * Get a random encouragement message
  */
-export const getRandomEncouragement = (): string => {
-  return ENCOURAGEMENT_MESSAGES[Math.floor(Math.random() * ENCOURAGEMENT_MESSAGES.length)];
+export const getRandomEncouragement = (language?: string): string => {
+  const exerciseLang = getExerciseLanguage(language);
+  const list = EXERCISE_CONTENT.encouragements[exerciseLang] || EXERCISE_CONTENT.encouragements.en;
+  return list[Math.floor(Math.random() * list.length)];
 };

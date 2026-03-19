@@ -7,7 +7,7 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Play, CheckCircle, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { ODD_ONE_OUT_ROUNDS } from '@/data/exercises';
+import { EXERCISE_CONTENT, getExerciseLanguage } from '@/data/exercises';
 import RewardAnimation from '../RewardAnimation';
 import { recordExerciseCompletion, UserProgress } from '@/lib/exerciseStorage';
 
@@ -16,10 +16,16 @@ interface OddOneOutProps {
   onComplete: (progress: UserProgress) => void;
 }
 
+type Difficulty = 'easy' | 'medium' | 'hard';
+type OddRound = { words: string[]; answer: number; difficulty: Difficulty };
+
 export default function OddOneOut({ onBack, onComplete }: OddOneOutProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const exerciseLang = getExerciseLanguage(i18n.language);
+  const allRounds = EXERCISE_CONTENT.oddOneOut[exerciseLang].rounds as OddRound[];
+  const exampleRound = allRounds[0];
   const [gameState, setGameState] = useState<'intro' | 'playing' | 'feedback' | 'result' | 'reward'>('intro');
-  const [rounds, setRounds] = useState<typeof ODD_ONE_OUT_ROUNDS>([]);
+  const [rounds, setRounds] = useState<OddRound[]>([]);
   const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isCorrect, setIsCorrect] = useState(false);
@@ -30,13 +36,13 @@ export default function OddOneOut({ onBack, onComplete }: OddOneOutProps) {
 
   // Initialize the game
   const initializeGame = useCallback(() => {
-    const shuffled = [...ODD_ONE_OUT_ROUNDS].sort(() => Math.random() - 0.5).slice(0, 10);
+    const shuffled = [...allRounds].sort(() => Math.random() - 0.5).slice(0, 10);
     setRounds(shuffled);
     setCurrentRoundIndex(0);
     setSelectedIndex(null);
     setScore(0);
     setGameState('playing');
-  }, []);
+  }, [allRounds]);
 
   // Handle word selection
   const handleWordClick = (index: number) => {
@@ -134,10 +140,18 @@ export default function OddOneOut({ onBack, onComplete }: OddOneOutProps) {
               <div className="bg-white/30 rounded-xl p-6 mb-8">
                 <h3 className="font-semibold text-text-primary mb-4">{t('exerciseScreens.oddOneOut.example')}</h3>
                 <div className="grid grid-cols-4 gap-2 max-w-md mx-auto mb-4">
-                  <div className="py-3 px-4 bg-white rounded-lg text-xl font-bold text-text-primary">cat</div>
-                  <div className="py-3 px-4 bg-white rounded-lg text-xl font-bold text-text-primary">cat</div>
-                  <div className="py-3 px-4 bg-mint rounded-lg text-xl font-bold text-white">bat</div>
-                  <div className="py-3 px-4 bg-white rounded-lg text-xl font-bold text-text-primary">cat</div>
+                  {(exampleRound?.words || []).slice(0, 4).map((word, idx) => (
+                    <div
+                      key={idx}
+                      className={`py-3 px-4 rounded-lg text-xl font-bold ${
+                        idx === exampleRound?.answer
+                          ? 'bg-mint text-white'
+                          : 'bg-white text-text-primary'
+                      }`}
+                    >
+                      {word}
+                    </div>
+                  ))}
                 </div>
                 <p className="text-sm text-text-secondary">
                   {t('exerciseScreens.oddOneOut.exampleHint')}

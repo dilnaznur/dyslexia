@@ -33,14 +33,39 @@ import {
 import { useDiagnosis } from '@/context/DiagnosisProvider';
 import confetti from 'canvas-confetti';
 import { ALL_EXERCISES } from '@/data/exercises';
-import jsPDF from 'jspdf';
+import html2pdf from 'html2pdf.js';
 import { useTranslation } from 'react-i18next';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { state } = useDiagnosis();
   const [countedScore, setCountedScore] = useState(0);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  const uiLang = (i18n.language || 'en').split('-')[0].toLowerCase();
+
+  const translateIndicator = (value: string) => {
+    if (value.startsWith('results.') || value.startsWith('dashboard.')) {
+      return t(value, { defaultValue: value });
+    }
+
+    // Backward compatibility for any previously stored raw English strings.
+    const legacyMap: Record<string, string> = {
+      'Reading patterns within typical range': 'results.eyeTracking.description',
+      'Letter reversal patterns noted in handwriting': 'results.handwriting.description',
+      'Good cognitive engagement and comprehension': 'results.chatbot.description',
+      'Low risk detected. Continue monitoring reading development': 'results.recommendation.low',
+    };
+    const key = legacyMap[value];
+    return key ? t(key) : value;
+  };
+
+  const getLocalizedRecommendation = () => {
+    if (state.final_classification === 'Low Risk') return t('results.recommendation.low');
+    if (state.final_classification === 'Moderate Risk') return t('results.recommendation.moderate');
+    if (state.final_classification === 'High Risk') return t('results.recommendation.high');
+    return t('results.recommendation.low');
+  };
 
   // Get recommended exercises based on risk score and weak areas
   const getRecommendedExercises = () => {
@@ -108,131 +133,144 @@ export default function Dashboard() {
   }, [state.final_score]);
 
   // ====== PDF Report Generation ======
-  const generatePDFReport = async () => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
+  const generatePDFReport = () => {
+    // Helper function for translations
+    function getTranslation(key: string, language: string) {
+      const translations: Record<string, Record<string, string>> = {
+        en: {
+          mindstepReport: 'MindStep - Dyslexia Screening Report',
+          date: 'Date',
+          assessmentResults: 'Assessment Results',
+          memoryScore: 'Memory Score',
+          attentionScore: 'Attention Score',
+          comprehensionScore: 'Comprehension Score',
+          overallRisk: 'Overall Risk Level',
+          eyeTracking: 'Eye-Tracking Analysis',
+          handwriting: 'Handwriting Analysis',
+          finalScore: 'Final Diagnostic Score',
+          riskScore: 'Risk Score',
+          disclaimer:
+            'This is a screening tool, not a diagnosis. Consult a professional for evaluation.',
+          Low: 'Low Risk',
+          Moderate: 'Moderate Risk',
+          High: 'High Risk',
+        },
+        ru: {
+          mindstepReport: 'MindStep — Скрининг дислексии',
+          date: 'Дата',
+          assessmentResults: 'Результаты оценки',
+          memoryScore: 'Память',
+          attentionScore: 'Внимание',
+          comprehensionScore: 'Понимание',
+          overallRisk: 'Общий уровень риска',
+          eyeTracking: 'Анализ движения глаз',
+          handwriting: 'Анализ почерка',
+          finalScore: 'Итоговый диагностический балл',
+          riskScore: 'Балл риска',
+          disclaimer:
+            'Это инструмент скрининга, а не диагноз. Обратитесь к специалисту для оценки.',
+          Low: 'Низкий риск',
+          Moderate: 'Средний риск',
+          High: 'Высокий риск',
+        },
+        kz: {
+          mindstepReport: 'MindStep — Дислексия скринингі',
+          date: 'Күні',
+          assessmentResults: 'Бағалау нәтижелері',
+          memoryScore: 'Жады',
+          attentionScore: 'Назар',
+          comprehensionScore: 'Түсіну',
+          overallRisk: 'Жалпы қауіп деңгейі',
+          eyeTracking: 'Көз қозғалысын талдау',
+          handwriting: 'Қолжазба талдау',
+          finalScore: 'Қорытынды диагностикалық балл',
+          riskScore: 'Қауіп баллы',
+          disclaimer:
+            'Бұл скрининг құралы, диагноз емес. Бағалау үшін маманға хабарласыңыз.',
+          Low: 'Төмен қауіп',
+          Moderate: 'Орташа қауіп',
+          High: 'Жоғары қауіп',
+        },
+      };
 
-    // Embed NotoSans for full Unicode (Cyrillic / Kazakh) support
-    try {
-      const [regularBytes, boldBytes] = await Promise.all([
-        fetch('/fonts/NotoSans-Regular.ttf').then((r) => r.arrayBuffer()),
-        fetch('/fonts/NotoSans-Bold.ttf').then((r) => r.arrayBuffer()),
-      ]);
-      const toBase64 = (buf: ArrayBuffer) =>
-        btoa(String.fromCharCode(...new Uint8Array(buf)));
-      doc.addFileToVFS('NotoSans-Regular.ttf', toBase64(regularBytes));
-      doc.addFont('NotoSans-Regular.ttf', 'NotoSans', 'normal');
-      doc.addFileToVFS('NotoSans-Bold.ttf', toBase64(boldBytes));
-      doc.addFont('NotoSans-Bold.ttf', 'NotoSans', 'bold');
-    } catch {
-      // Fallback to helvetica if fonts fail to load
+      return translations[language]?.[key] || translations.en[key] || key;
     }
 
-    // Title
-    doc.setFontSize(22);
-    doc.setFont('NotoSans', 'bold');
-    doc.text(t('pdf.title'), pageWidth / 2, 22, { align: 'center' });
+    const language = uiLang === 'kk' ? 'kz' : uiLang;
 
-    // Date
-    doc.setFontSize(11);
-    doc.setFont('NotoSans', 'normal');
-    doc.text(`${t('pdf.date')}: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, 20, 34);
+    const riskRaw = state.final_classification || 'Low Risk';
+    const riskKey =
+      riskRaw.includes('High') ? 'High' : riskRaw.includes('Moderate') ? 'Moderate' : 'Low';
 
-    // Divider
-    doc.setDrawColor(99, 102, 241);
-    doc.setLineWidth(0.7);
-    doc.line(20, 38, pageWidth - 20, 38);
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="${language}">
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap');
+          body {
+            font-family: 'Noto Sans', Arial, sans-serif;
+            padding: 20px;
+            color: #1f2937;
+          }
+          h1 { font-size: 24px; margin-bottom: 10px; }
+          h2 { font-size: 18px; margin-top: 20px; }
+          p { font-size: 14px; line-height: 1.6; }
+          .score { font-size: 20px; font-weight: bold; color: #6366f1; }
+          .date { color: #6b7280; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <h1>${getTranslation('mindstepReport', language)}</h1>
+        <p class="date">${getTranslation('date', language)}: ${new Date().toLocaleDateString()}</p>
 
-    // Overall Score
-    doc.setFontSize(16);
-    doc.setFont('NotoSans', 'bold');
-    doc.text(t('pdf.overallRisk'), 20, 50);
-    doc.setFontSize(12);
-    doc.setFont('NotoSans', 'normal');
-    doc.text(`${t('pdf.finalRiskScore')}: ${Math.round(state.final_score || 0)} / 100`, 28, 60);
-    doc.text(`${t('pdf.classification')}: ${state.final_classification || 'N/A'}`, 28, 68);
-    doc.text(`${t('pdf.confidence')}: ${((state.combined_explanation?.confidence || 0) * 100).toFixed(1)}%`, 28, 76);
+        <h2>${getTranslation('assessmentResults', language)}</h2>
+        <p>${getTranslation('memoryScore', language)}: <span class="score">${state.chatbot_data?.memory_score?.toFixed(1) ?? '—'}/10</span></p>
+        <p>${getTranslation('attentionScore', language)}: <span class="score">${state.chatbot_data?.attention_score?.toFixed(1) ?? '—'}/10</span></p>
+        <p>${getTranslation('comprehensionScore', language)}: <span class="score">${state.chatbot_data?.comprehension_score?.toFixed(1) ?? '—'}/10</span></p>
 
-    // Chatbot / Cognitive Scores
-    doc.setFontSize(16);
-    doc.setFont('NotoSans', 'bold');
-    doc.text(t('pdf.cognitiveAssessment'), 20, 92);
-    doc.setFontSize(12);
-    doc.setFont('NotoSans', 'normal');
-    if (state.chatbot_data) {
-      doc.text(`${t('pdf.memoryScore')}: ${state.chatbot_data.memory_score.toFixed(1)} / 10`, 28, 102);
-      doc.text(`${t('pdf.attentionScore')}: ${state.chatbot_data.attention_score.toFixed(1)} / 10`, 28, 110);
-      doc.text(`${t('pdf.comprehensionScore')}: ${state.chatbot_data.comprehension_score.toFixed(1)} / 10`, 28, 118);
-      doc.text(`${t('pdf.cognitiveRisk')}: ${state.chatbot_data.overall_cognitive_risk}`, 28, 126);
-    } else {
-      doc.text(t('pdf.chatbotNotCompleted'), 28, 102);
-    }
+        <h2>${getTranslation('overallRisk', language)}</h2>
+        <p class="score">${getTranslation(riskKey, language)}</p>
 
-    // Eye-tracking
-    doc.setFontSize(16);
-    doc.setFont('NotoSans', 'bold');
-    doc.text(t('pdf.eyeTrackingAnalysis'), 20, 142);
-    doc.setFontSize(12);
-    doc.setFont('NotoSans', 'normal');
-    if (state.backend_prediction) {
-      doc.text(`${t('pdf.riskScoreLabel')}: ${state.backend_prediction.risk_score.toFixed(1)} / 100`, 28, 152);
-      doc.text(`${t('pdf.classification')}: ${state.backend_prediction.classification}`, 28, 160);
-      doc.text(`${t('pdf.modelConfidence')}: ${(state.backend_prediction.confidence * 100).toFixed(1)}%`, 28, 168);
-    } else {
-      doc.text(t('pdf.eyeTrackingNotAvailable'), 28, 152);
-    }
+        <h2>${getTranslation('eyeTracking', language)}</h2>
+        <p>${getTranslation('riskScore', language)}: ${state.backend_prediction?.risk_score?.toFixed(1) ?? '—'}/100</p>
 
-    // Handwriting
-    doc.setFontSize(16);
-    doc.setFont('NotoSans', 'bold');
-    doc.text(t('pdf.handwritingAnalysis'), 20, 184);
-    doc.setFontSize(12);
-    doc.setFont('NotoSans', 'normal');
-    if (state.writing_data) {
-      doc.text(`${t('pdf.strokeCount')}: ${state.writing_data.stroke_count}`, 28, 194);
-      doc.text(`${t('pdf.avgStrokeSpeed')}: ${state.writing_data.avg_stroke_speed.toFixed(1)}`, 28, 202);
-    } else {
-      doc.text(t('pdf.handwritingNotCompleted'), 28, 194);
-    }
+        <h2>${getTranslation('handwriting', language)}</h2>
+        <p>${getTranslation('riskScore', language)}: ${state.writing_data ? Math.round(state.final_score || 0) : '—'}/100</p>
 
-    // Recommendation
-    doc.setFontSize(16);
-    doc.setFont('NotoSans', 'bold');
-    doc.text(t('pdf.recommendations'), 20, 220);
-    doc.setFontSize(11);
-    doc.setFont('NotoSans', 'normal');
-    const rec = state.combined_explanation?.recommendation || '';
-    const recLines = doc.splitTextToSize(rec, pageWidth - 50);
-    doc.text(recLines, 28, 230);
+        <h2>${getTranslation('finalScore', language)}</h2>
+        <p class="score">${Math.round(state.final_score || 0)}/100</p>
 
-    // Primary indicators
-    const indicators = state.combined_explanation?.primary_factors || [];
-    if (indicators.length > 0) {
-      let y = 230 + recLines.length * 6 + 14;
-      doc.setFontSize(14);
-      doc.setFont('NotoSans', 'bold');
-      doc.text(t('pdf.keyIndicators'), 20, y);
-      y += 8;
-      doc.setFontSize(11);
-      doc.setFont('NotoSans', 'normal');
-      indicators.forEach((ind: string) => {
-        const lines = doc.splitTextToSize(`• ${ind}`, pageWidth - 50);
-        doc.text(lines, 28, y);
-        y += lines.length * 6 + 2;
+        <p style="margin-top: 40px; font-size: 12px; color: #6b7280;">
+          ${getTranslation('disclaimer', language)}
+        </p>
+      </body>
+      </html>
+    `;
+
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'fixed';
+    wrapper.style.left = '-99999px';
+    wrapper.style.top = '0';
+    wrapper.innerHTML = htmlContent;
+    document.body.appendChild(wrapper);
+
+    const options = {
+      margin: 10,
+      filename: `MindStep_Report_${new Date().toISOString().split('T')[0]}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    };
+
+    html2pdf()
+      .from(wrapper)
+      .set(options)
+      .save()
+      .finally(() => {
+        document.body.removeChild(wrapper);
       });
-    }
-
-    // Footer
-    doc.setFontSize(9);
-    doc.setFont('NotoSans', 'normal');
-    doc.text(
-      t('pdf.disclaimer'),
-      pageWidth / 2,
-      285,
-      { align: 'center' }
-    );
-
-    doc.save('MindStep_Report.pdf');
   };
 
   if (!state.final_score || !state.combined_explanation) {
@@ -517,7 +555,7 @@ export default function Dashboard() {
                   className="flex items-start gap-3 bg-white/50 p-3 rounded-lg"
                 >
                   <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-text-primary">{factor}</span>
+                  <span className="text-text-primary">{translateIndicator(factor)}</span>
                 </motion.div>
               ))}
             </div>
@@ -534,7 +572,7 @@ export default function Dashboard() {
               <ul className="space-y-1 text-sm text-text-secondary">
                 {state.combined_explanation.detailed_breakdown.reading.map(
                   (item, i) => (
-                    <li key={i}>• {item}</li>
+                    <li key={i}>• {translateIndicator(item)}</li>
                   )
                 )}
               </ul>
@@ -549,7 +587,7 @@ export default function Dashboard() {
               <ul className="space-y-1 text-sm text-text-secondary">
                 {state.combined_explanation.detailed_breakdown.writing.map(
                   (item, i) => (
-                    <li key={i}>• {item}</li>
+                    <li key={i}>• {translateIndicator(item)}</li>
                   )
                 )}
                 {state.combined_explanation.detailed_breakdown.writing
@@ -568,7 +606,7 @@ export default function Dashboard() {
               <ul className="space-y-1 text-sm text-text-secondary">
                 {state.combined_explanation.detailed_breakdown.behavioral.map(
                   (item, i) => (
-                    <li key={i}>• {item}</li>
+                    <li key={i}>• {translateIndicator(item)}</li>
                   )
                 )}
                 {state.combined_explanation.detailed_breakdown.behavioral
@@ -588,7 +626,7 @@ export default function Dashboard() {
                   {t('dashboard.recommendation')}
                 </h4>
                 <p className="text-text-primary leading-relaxed">
-                  {state.combined_explanation.recommendation}
+                  {getLocalizedRecommendation()}
                 </p>
               </div>
             </div>

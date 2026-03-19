@@ -1,5 +1,4 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -33,31 +32,58 @@ export default function InstructionModal({
   actionGradient,
 }: InstructionModalProps) {
   const { t } = useTranslation();
-  if (!open) return null;
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+  const [shouldRender, setShouldRender] = useState(false);
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setShouldRender(true);
+      return;
+    }
+
+    // Remove active class (triggers fade out)
+    setIsActive(false);
+
+    // CRITICAL: Wait for animation to finish before hiding/unmounting
+    const timer = window.setTimeout(() => {
+      const overlay = overlayRef.current;
+      if (overlay) overlay.style.display = 'none';
+      setShouldRender(false);
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [open]);
+
+  useEffect(() => {
+    if (!shouldRender || !open) return;
+
+    const overlay = overlayRef.current;
+    if (!overlay) return;
+
+    // Show element first (display: flex)
+    overlay.style.display = 'flex';
+
+    // CRITICAL: Force reflow before adding 'active' class
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    overlay.offsetHeight;
+
+    // Then add active class for animation
+    setIsActive(true);
+  }, [shouldRender, open]);
+
+  if (!shouldRender) return null;
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          key="modal-overlay"
-          initial={{ backgroundColor: 'rgba(0,0,0,0)' }}
-          animate={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
-          exit={{ backgroundColor: 'rgba(0,0,0,0)' }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="fixed inset-0 flex items-center justify-center p-4"
-          style={{ zIndex: 1000 }}
-          onClick={onClose}
-        >
-          <motion.div
-            key="modal-content"
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="bg-white w-full relative text-center"
-            style={{ maxWidth: 500, borderRadius: 16 }}
-            onClick={(e) => e.stopPropagation()}
-          >
+    <div
+      ref={overlayRef}
+      className={`modal-overlay ${isActive ? 'active' : ''}`}
+      onClick={onClose}
+      style={{ display: 'none' }}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             {/* Close button */}
             <button
               onClick={onClose}
@@ -111,9 +137,7 @@ export default function InstructionModal({
                 )}
               </div>
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+      </div>
+    </div>
   );
 }

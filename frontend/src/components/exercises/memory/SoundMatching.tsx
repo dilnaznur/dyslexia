@@ -7,9 +7,11 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Play, Volume2, CheckCircle, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { SOUND_MATCHING_ROUNDS } from '@/data/exercises';
+import { EXERCISE_CONTENT, getExerciseLanguage } from '@/data/exercises';
 import RewardAnimation from '../RewardAnimation';
 import { recordExerciseCompletion, UserProgress } from '@/lib/exerciseStorage';
+import { SPEECH_LANG } from '@/i18n';
+import { speakForChildren } from '@/lib/speech';
 
 interface SoundMatchingProps {
   onBack: () => void;
@@ -17,9 +19,14 @@ interface SoundMatchingProps {
 }
 
 export default function SoundMatching({ onBack, onComplete }: SoundMatchingProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const exerciseLang = getExerciseLanguage(i18n.language);
+  const speechLang = SPEECH_LANG[exerciseLang] || SPEECH_LANG[i18n.language] || 'en-US';
+  const allRounds = EXERCISE_CONTENT.soundMatching[exerciseLang].rounds;
+  const exampleRound = allRounds[0];
+  const exampleMatch = exampleRound?.options.find((o) => o.isMatch);
   const [gameState, setGameState] = useState<'intro' | 'playing' | 'feedback' | 'result' | 'reward'>('intro');
-  const [rounds, setRounds] = useState<typeof SOUND_MATCHING_ROUNDS>([]);
+  const [rounds, setRounds] = useState<typeof allRounds>([]);
   const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isCorrect, setIsCorrect] = useState(false);
@@ -31,41 +38,27 @@ export default function SoundMatching({ onBack, onComplete }: SoundMatchingProps
 
   // Initialize the game
   const initializeGame = useCallback(() => {
-    const shuffled = [...SOUND_MATCHING_ROUNDS].sort(() => Math.random() - 0.5).slice(0, 8);
+    const shuffled = [...allRounds].sort(() => Math.random() - 0.5).slice(0, 8);
     setRounds(shuffled);
     setCurrentRoundIndex(0);
     setSelectedIndex(null);
     setScore(0);
     setGameState('playing');
-  }, []);
+  }, [allRounds]);
 
   // Play word sound using Web Speech API
   const playWordSound = (word: string) => {
     setIsPlayingSound(true);
 
-    // Use Web Speech API for text-to-speech
-    if ('speechSynthesis' in window) {
-      // Cancel any ongoing speech
-      speechSynthesis.cancel();
-
-      const utterance = new SpeechSynthesisUtterance(word);
-      utterance.rate = 0.8; // Slower for children
-      utterance.pitch = 1.1; // Slightly higher pitch
-      utterance.volume = 1;
-
-      utterance.onend = () => {
-        setIsPlayingSound(false);
-      };
-
-      utterance.onerror = () => {
-        setIsPlayingSound(false);
-      };
-
-      speechSynthesis.speak(utterance);
-    } else {
-      // Fallback - just show the word briefly
-      setTimeout(() => setIsPlayingSound(false), 500);
-    }
+    void speakForChildren(word, speechLang).then((utterance) => {
+      if (!utterance) {
+        // Fallback - just show the word briefly
+        setTimeout(() => setIsPlayingSound(false), 500);
+        return;
+      }
+      utterance.onend = () => setIsPlayingSound(false);
+      utterance.onerror = () => setIsPlayingSound(false);
+    });
   };
 
   // Handle option selection
@@ -166,12 +159,12 @@ export default function SoundMatching({ onBack, onComplete }: SoundMatchingProps
                 <div className="flex items-center justify-center gap-4 mb-4">
                   <div className="flex items-center gap-2 bg-soft-blue text-white px-4 py-2 rounded-full">
                     <Volume2 className="w-5 h-5" />
-                    <span className="font-bold">cat</span>
+                    <span className="font-bold">{exampleRound?.targetWord}</span>
                   </div>
                   <span className="text-2xl">→</span>
                   <div className="flex gap-2">
-                    <span className="text-3xl">🎩</span>
-                    <span className="font-bold text-mint">hat</span>
+                    <span className="text-3xl">{exampleMatch?.emoji}</span>
+                    <span className="font-bold text-mint">{exampleMatch?.word}</span>
                   </div>
                 </div>
                 <p className="text-sm text-text-secondary">

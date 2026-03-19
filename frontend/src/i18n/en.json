@@ -187,6 +187,40 @@
       "tviScore": "TVI Score"
     }
   },
+  "results": {
+    "whyThisResult": "Why this result?",
+    "keyIndicators": "Key Indicators",
+    "eyeTracking": {
+      "title": "Reading",
+      "description": "Reading patterns within typical range"
+    },
+    "handwriting": {
+      "title": "Writing",
+      "description": "Letter reversal patterns noted in handwriting"
+    },
+    "chatbot": {
+      "title": "Behavior",
+      "description": "Good cognitive engagement and comprehension"
+    },
+    "indicators": {
+      "handwriting": {
+        "spacing": "Irregular letter spacing observed",
+        "tremor": "Hand tremor detected in writing",
+        "noConcerns": "Handwriting assessment completed - no significant concerns"
+      },
+      "behavioral": {
+        "lowMemory": "Below-average memory recall",
+        "attentionChallenges": "Attention challenges observed",
+        "comprehensionDifficulties": "Comprehension difficulties noted"
+      }
+    },
+    "recommendation": {
+      "title": "Recommendation",
+      "low": "Low risk detected. Continue monitoring reading development through regular assessments.",
+      "moderate": "Moderate risk detected. Consider consultation with reading specialist.",
+      "high": "High risk detected. Professional assessment recommended."
+    }
+  },
   "pdf": {
     "title": "MindStep — Dyslexia Screening Report",
     "date": "Date",
@@ -421,6 +455,16 @@
       "wrongFeedback": "The correct answer was \"{{answer}}\"",
       "resultTitle": "Great Listening!",
       "resultSummary": "You matched {{score}} out of {{total}} sounds correctly!"
+    },
+    "reward": {
+      "stars3Title": "Perfect Score!",
+      "stars2Title": "Great Job!",
+      "stars1Title": "Good Try!",
+      "stars0Title": "Keep Practicing!",
+      "newBadge": "New Badge!",
+      "exerciseComplete": "Exercise Complete!",
+      "perfectScore": "Perfect Score!",
+      "youAreAmazing": "You're absolutely amazing!"
     }
   }
 }

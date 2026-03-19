@@ -93,7 +93,7 @@
     "correctStoryAnswers": ["макс", "ит"],
     "options": {
       "q2": [
-        { "emoji": "�️", "label": "қала", "value": "қала" },
+        { "emoji": "🏙️", "label": "қала", "value": "қала" },
         { "emoji": "🪑", "label": "үстел", "value": "үстел" },
         { "emoji": "🪟", "label": "терезе", "value": "терезе" }
       ],
@@ -185,6 +185,40 @@
       "entropy": "Энтропия",
       "autocorrelation": "Автокорреляция",
       "tviScore": "TVI балы"
+    }
+  },
+  "results": {
+    "whyThisResult": "Неліктен мұндай нәтиже?",
+    "keyIndicators": "Негізгі көрсеткіштер",
+    "eyeTracking": {
+      "title": "Оқу",
+      "description": "Оқу үлгілері қалыпты диапазонда"
+    },
+    "handwriting": {
+      "title": "Жазу",
+      "description": "Қолжазбада айна әріптері байқалды"
+    },
+    "chatbot": {
+      "title": "Мінез-құлық",
+      "description": "Жақсы когнитивті қатысу және түсіну"
+    },
+    "indicators": {
+      "handwriting": {
+        "spacing": "Әріптердің арақашықтығы біркелкі емес байқалды",
+        "tremor": "Жазу кезінде қол дірілі байқалды",
+        "noConcerns": "Қолжазба бағалауы аяқталды — маңызды алаңдаушылық жоқ"
+      },
+      "behavioral": {
+        "lowMemory": "Жады көрсеткіші орташа деңгейден төмен",
+        "attentionChallenges": "Назарда қиындықтар байқалды",
+        "comprehensionDifficulties": "Түсінуде қиындықтар байқалды"
+      }
+    },
+    "recommendation": {
+      "title": "Ұсыным",
+      "low": "Төмен қауіп. Тұрақты бағалау арқылы оқу дамуын бақылауды жалғастырыңыз.",
+      "moderate": "Орташа қауіп. Оқу мамандарымен кеңесуді қарастырыңыз.",
+      "high": "Жоғары қауіп. Кәсіби бағалау ұсынылады."
     }
   },
   "pdf": {
@@ -421,6 +455,16 @@
       "wrongFeedback": "Дұрыс жауап: \"{{answer}}\"",
       "resultTitle": "Керемет тыңдау!",
       "resultSummary": "Сен {{total}} дыбыстың {{score}}-ін дұрыс сәйкестендірдің!"
+    },
+    "reward": {
+      "stars3Title": "Керемет нәтиже!",
+      "stars2Title": "Жарайсың!",
+      "stars1Title": "Жақсы талпыныс!",
+      "stars0Title": "Жаттығуды жалғастыр!",
+      "newBadge": "Жаңа белгі!",
+      "exerciseComplete": "Жаттығу аяқталды!",
+      "perfectScore": "Керемет нәтиже!",
+      "youAreAmazing": "Сен кереметсің!"
     }
   }
 }

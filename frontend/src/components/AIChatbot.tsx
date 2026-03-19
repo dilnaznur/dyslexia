@@ -11,6 +11,7 @@ import confetti from 'canvas-confetti';
 import InstructionModal from './InstructionModal';
 import { useTranslation } from 'react-i18next';
 import { SPEECH_LANG } from '@/i18n';
+import { speakForChildren } from '@/lib/speech';
 
 // ============================================================================
 // Types & Constants
@@ -50,46 +51,8 @@ const PASTEL_COLORS = [
 // Audio Helper (language-aware, child-friendly voices)
 // ============================================================================
 
-function speakText(text: string, lang: string): SpeechSynthesisUtterance | null {
-  if (!('speechSynthesis' in window)) return null;
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = lang;
-  
-  // Select child-friendly voice (female, higher pitch, clear)
-  try {
-    const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 0) {
-      // Prefer female voices with common names
-      const childVoice = voices.find(v => 
-        (v.name.includes('Female') || 
-         v.name.includes('woman') ||
-         v.name.includes('Samantha') ||
-         v.name.includes('Victoria') ||
-         v.name.includes('Karen') ||
-         v.name.includes('Moira') ||
-         v.name.includes('Fiona') ||
-         v.name.includes('Zira')) &&
-        v.lang.startsWith(lang.substring(0, 2))
-      ) || voices.find(v => 
-        v.lang.startsWith(lang.substring(0, 2))
-      );
-      
-      if (childVoice) {
-        utterance.voice = childVoice;
-      }
-    }
-  } catch (e) {
-    // Ignore voice selection errors
-  }
-  
-  // Child-friendly voice parameters
-  utterance.pitch = 1.2;  // Higher pitch, more friendly
-  utterance.rate = 0.85;  // Slower for clarity
-  utterance.volume = 1.0; // Full volume
-  
-  window.speechSynthesis.speak(utterance);
-  return utterance;
+async function speakText(text: string, lang: string): Promise<SpeechSynthesisUtterance | null> {
+  return speakForChildren(text, lang);
 }
 
 // ============================================================================
@@ -356,12 +319,15 @@ export default function AIChatbot({ onComplete, onSkip }: AIChatbotProps) {
   const speakQuestion = useCallback(
     (text: string) => {
       if (!audioEnabled) return;
-      const utt = speakText(text, speechLang);
-      if (utt) {
-        setIsSpeaking(true);
+      setIsSpeaking(true);
+      void speakText(text, speechLang).then((utt) => {
+        if (!utt) {
+          setIsSpeaking(false);
+          return;
+        }
         utt.onend = () => setIsSpeaking(false);
         utt.onerror = () => setIsSpeaking(false);
-      }
+      });
     },
     [audioEnabled, speechLang]
   );
@@ -659,7 +625,7 @@ export default function AIChatbot({ onComplete, onSkip }: AIChatbotProps) {
                       {/* Speaker button on assistant messages */}
                       {msg.role === 'assistant' && (
                         <button
-                          onClick={() => speakText(msg.content, speechLang)}
+                          onClick={() => void speakText(msg.content, speechLang)}
                           className="absolute -right-3 -top-3 bg-white rounded-full p-1 shadow border border-indigo-100 hover:bg-indigo-50 transition-colors"
                           title={t('chatbot.listenMsg')}
                         >

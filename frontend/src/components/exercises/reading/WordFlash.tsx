@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Play, CheckCircle, XCircle, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { WORD_FLASH_WORDS } from '@/data/exercises';
+import { EXERCISE_CONTENT, getExerciseLanguage } from '@/data/exercises';
 import RewardAnimation from '../RewardAnimation';
 import { recordExerciseCompletion, UserProgress } from '@/lib/exerciseStorage';
 
@@ -19,7 +19,8 @@ interface WordFlashProps {
 type Difficulty = 'easy' | 'medium' | 'hard';
 
 export default function WordFlash({ onBack, onComplete }: WordFlashProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const exerciseLang = getExerciseLanguage(i18n.language);
   const [gameState, setGameState] = useState<'intro' | 'playing' | 'result' | 'reward'>('intro');
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
@@ -33,7 +34,7 @@ export default function WordFlash({ onBack, onComplete }: WordFlashProps) {
 
   // Initialize words for the round
   const initializeGame = useCallback(() => {
-    const wordList = [...WORD_FLASH_WORDS[difficulty]];
+    const wordList = [...EXERCISE_CONTENT.wordFlash[exerciseLang][difficulty]];
     // Shuffle and take 10 words
     const shuffled = wordList.sort(() => Math.random() - 0.5).slice(0, 10);
     setWords(shuffled);
@@ -47,7 +48,7 @@ export default function WordFlash({ onBack, onComplete }: WordFlashProps) {
     setFlashDuration(durations[difficulty]);
 
     setGameState('playing');
-  }, [difficulty]);
+  }, [difficulty, exerciseLang]);
 
   // Show word sequence
   useEffect(() => {
