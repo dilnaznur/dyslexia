@@ -5,7 +5,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Volume2, VolumeX, Star } from 'lucide-react';
+import { Send, Volume2, VolumeX, Star, Mic, MicOff } from 'lucide-react';
 import { ChatMessage, ChatbotAnalysis } from '@/types';
 import confetti from 'canvas-confetti';
 import InstructionModal from './InstructionModal';
@@ -47,7 +47,7 @@ const PASTEL_COLORS = [
 ];
 
 // ============================================================================
-// Audio Helper (language-aware)
+// Audio Helper (language-aware, child-friendly voices)
 // ============================================================================
 
 function speakText(text: string, lang: string): SpeechSynthesisUtterance | null {
@@ -55,7 +55,39 @@ function speakText(text: string, lang: string): SpeechSynthesisUtterance | null 
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
-  utterance.rate = 0.9;
+  
+  // Select child-friendly voice (female, higher pitch, clear)
+  try {
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      // Prefer female voices with common names
+      const childVoice = voices.find(v => 
+        (v.name.includes('Female') || 
+         v.name.includes('woman') ||
+         v.name.includes('Samantha') ||
+         v.name.includes('Victoria') ||
+         v.name.includes('Karen') ||
+         v.name.includes('Moira') ||
+         v.name.includes('Fiona') ||
+         v.name.includes('Zira')) &&
+        v.lang.startsWith(lang.substring(0, 2))
+      ) || voices.find(v => 
+        v.lang.startsWith(lang.substring(0, 2))
+      );
+      
+      if (childVoice) {
+        utterance.voice = childVoice;
+      }
+    }
+  } catch (e) {
+    // Ignore voice selection errors
+  }
+  
+  // Child-friendly voice parameters
+  utterance.pitch = 1.2;  // Higher pitch, more friendly
+  utterance.rate = 0.85;  // Slower for clarity
+  utterance.volume = 1.0; // Full volume
+  
   window.speechSynthesis.speak(utterance);
   return utterance;
 }
@@ -309,9 +341,11 @@ export default function AIChatbot({ onComplete, onSkip }: AIChatbotProps) {
   const [analysis, setAnalysis] = useState<ChatbotAnalysis | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [mcSelected, setMcSelected] = useState<string | null>(null);
+  const [isListening, setIsListening] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   // Auto-scroll
   useEffect(() => {
@@ -331,6 +365,60 @@ export default function AIChatbot({ onComplete, onSkip }: AIChatbotProps) {
     },
     [audioEnabled, speechLang]
   );
+
+  // Initialize speech recognition for voice input (Q1, Q4, Q5)
+  useEffect(() => {
+    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = speechLang;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.onresult = (event: any) => {
+      let interimTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          setInputValue((prev) => (prev + transcript).trim());
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+      if (interimTranscript) {
+        setInputValue((prev) => prev.split(' ').slice(0, -1).join(' '));
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+  }, [speechLang]);
+
+  // Handle microphone button click
+  const handleVoiceInput = useCallback(() => {
+    if (!recognitionRef.current) return;
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current.lang = speechLang;
+      recognitionRef.current.start();
+    }
+  }, [isListening, speechLang]);
 
   // Start chatting – send first question
   useEffect(() => {
@@ -642,10 +730,22 @@ export default function AIChatbot({ onComplete, onSkip }: AIChatbotProps) {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyPress}
-                  placeholder={t('chatbot.typePlaceholder')}
+                  placeholder={isListening ? t('chatbot.listeningPlaceholder') || 'Listening... 🎤' : t('chatbot.typePlaceholder')}
                   disabled={showEncouragement}
                   className="flex-1 px-5 py-3 rounded-full border-2 border-indigo-200 focus:border-indigo-400 focus:outline-none text-base disabled:bg-gray-100 bg-white/80 text-lg"
                 />
+                <button
+                  onClick={handleVoiceInput}
+                  disabled={showEncouragement}
+                  className={`${
+                    isListening
+                      ? 'bg-red-500 hover:bg-red-600 ring-4 ring-red-300'
+                      : 'bg-gradient-to-r from-blue-400 to-cyan-500 hover:from-blue-500 hover:to-cyan-600'
+                  } disabled:from-gray-300 disabled:to-gray-300 text-white p-3 rounded-full transition-all hover:scale-105 shadow-md`}
+                  title={isListening ? t('chatbot.stopListening') || 'Stop listening' : t('chatbot.startListening') || 'Start voice input'}
+                >
+                  {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                </button>
                 <button
                   onClick={handleSubmit}
                   disabled={!inputValue.trim() || showEncouragement}

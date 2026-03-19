@@ -67,6 +67,9 @@
     "buddyName": "MindStep Buddy",
     "questionOf": "Question {{current}} of {{total}}",
     "typePlaceholder": "Type your answer here...",
+    "listeningPlaceholder": "Listening... 🎤",
+    "startListening": "Start voice input",
+    "stopListening": "Stop listening",
     "muteAudio": "Mute audio",
     "enableAudio": "Enable audio",
     "listenMsg": "Listen to this message",
@@ -150,6 +153,9 @@
     "subtitle": "Comprehensive Dyslexia Screening Report",
     "overallRisk": "Overall Risk Assessment",
     "riskScore": "Risk Score",
+    "classificationLowRisk": "Low Risk",
+    "classificationModerateRisk": "Moderate Risk",
+    "classificationHighRisk": "High Risk",
     "confidence": "Confidence",
     "analyzingResults": "Analyzing results...",
     "cognitiveProfile": "Cognitive Profile",
@@ -273,6 +279,23 @@
     "sound-matching": {
       "name": "Sound Matching",
       "description": "Match words that sound alike"
+    },
+    "exerciseContent": {
+      "wordFlash": {
+        "easy": ["the", "and", "cat", "dog", "run", "big", "red", "sun", "fun", "hat"],
+        "medium": ["happy", "jump", "blue", "green", "small", "fast", "play", "read", "book", "tree"],
+        "hard": ["butterfly", "elephant", "rainbow", "beautiful", "wonderful", "adventure", "together", "important", "different", "remember"]
+      },
+      "syllableGame": {
+        "easyWords": ["cat", "rabbit", "rainbow", "banana"],
+        "mediumWords": ["butterfly", "elephant", "dinosaur"],
+        "hardWords": ["watermelon", "helicopter", "caterpillar"]
+      },
+      "readingStories": {
+        "story1": "Max was a happy little dog. He loved to play in the park. Every day, he would run and jump. His favorite toy was a red ball.",
+        "story2": "Once upon a time, there was a garden. In this garden, flowers could talk. The roses were red and very kind. A little girl named Lily found this garden.",
+        "story3": "Captain Luna looked out the window of her spaceship. The stars sparkled like diamonds. Today was a special day for the crew. They were going to land on a new planet."
+      }
     }
   },
   "exerciseScreens": {

@@ -40,12 +40,12 @@ export default function InstructionModal({
       {open && (
         <motion.div
           key="modal-overlay"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.25 }}
+          initial={{ backgroundColor: 'rgba(0,0,0,0)' }}
+          animate={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+          exit={{ backgroundColor: 'rgba(0,0,0,0)' }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
           className="fixed inset-0 flex items-center justify-center p-4"
-          style={{ zIndex: 1000, backgroundColor: 'rgba(0,0,0,0.6)' }}
+          style={{ zIndex: 1000 }}
           onClick={onClose}
         >
           <motion.div

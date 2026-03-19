@@ -252,6 +252,20 @@ export default function Dashboard() {
     );
   }
 
+  // Helper function to translate risk classification
+  const getClassificationKey = (classification: string | null) => {
+    switch (classification) {
+      case 'Low Risk':
+        return t('dashboard.classificationLowRisk');
+      case 'Moderate Risk':
+        return t('dashboard.classificationModerateRisk');
+      case 'High Risk':
+        return t('dashboard.classificationHighRisk');
+      default:
+        return classification || 'N/A';
+    }
+  };
+
   const riskColor =
     state.final_classification === 'Low Risk'
       ? 'bg-green-500'
@@ -408,11 +422,7 @@ export default function Dashboard() {
 
           <div className={`inline-block px-6 py-3 rounded-full ${riskColor}`}>
             <span className="text-white font-bold text-xl">
-              {state.final_classification === 'Low Risk'
-                ? t('exercises.hub.riskLow')
-                : state.final_classification === 'Moderate Risk'
-                ? t('exercises.hub.riskModerate')
-                : t('exercises.hub.riskHigh')}
+              {getClassificationKey(state.final_classification)}
             </span>
           </div>
 
