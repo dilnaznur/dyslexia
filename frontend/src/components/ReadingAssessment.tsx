@@ -50,6 +50,23 @@ const CALIBRATION_POINTS = [
   { x: 90, y: 90 },
 ];
 
+const GAZE_BUFFER_SIZE = 5;
+
+function stabilizeGazePrediction(
+  buffer: { x: number; y: number }[],
+  x: number,
+  y: number
+): { x: number; y: number } {
+  buffer.push({ x, y });
+  if (buffer.length > GAZE_BUFFER_SIZE) {
+    buffer.shift();
+  }
+
+  const avgX = buffer.reduce((sum, p) => sum + p.x, 0) / buffer.length;
+  const avgY = buffer.reduce((sum, p) => sum + p.y, 0) / buffer.length;
+  return { x: avgX, y: avgY };
+}
+
 // WebGazer utility functions
 async function initializeWebGazer(): Promise<void> {
   try {
@@ -163,16 +180,18 @@ function startGazeTracking(onGazeData: (data: GazePoint) => void): void {
 
   console.log('👁️ Starting gaze tracking...');
   let gazeCount = 0;
+  const predictionBuffer: { x: number; y: number }[] = [];
 
   window.webgazer.setGazeListener((data: any, timestamp: number) => {
     if (data && data.x && data.y) {
+      const stabilized = stabilizeGazePrediction(predictionBuffer, data.x, data.y);
       gazeCount++;
       if (gazeCount % 30 === 0) {
         console.log(`👁️ Gaze data received: ${gazeCount} points`);
       }
       onGazeData({
-        x: data.x,
-        y: data.y,
+        x: stabilized.x,
+        y: stabilized.y,
         timestamp,
       });
     }
@@ -358,6 +377,9 @@ export default function ReadingAssessment({
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
+  const [fixedCalibrationPoint, setFixedCalibrationPoint] = useState<{ x: number; y: number } | null>(
+    CALIBRATION_POINTS[0]
+  );
   
   const gazePointsRef = useRef<GazePoint[]>([]);
   const startTimeRef = useRef<number>(0);
@@ -419,7 +441,11 @@ export default function ReadingAssessment({
     await new Promise(resolve => setTimeout(resolve, 500));
     
     if (calibrationIndex < CALIBRATION_POINTS.length - 1) {
-      setCalibrationIndex(prev => prev + 1);
+      setCalibrationIndex(prev => {
+        const next = prev + 1;
+        setFixedCalibrationPoint(CALIBRATION_POINTS[next]);
+        return next;
+      });
     } else {
       console.log('✅ Calibration complete, starting reading...');
       
@@ -568,10 +594,7 @@ export default function ReadingAssessment({
     }, 1000);
   };
 
-  const currentCalibrationPoint =
-    calibrationIndex < CALIBRATION_POINTS.length
-      ? CALIBRATION_POINTS[calibrationIndex]
-      : null;
+  const currentCalibrationPoint = fixedCalibrationPoint;
 
       return (
         <div className="min-h-screen bg-gradient-to-br from-blue-100 to-green-100 p-8 pt-24">
@@ -623,11 +646,10 @@ export default function ReadingAssessment({
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   onClick={handleCalibrationClick}
-                  className="absolute w-16 h-16 bg-red-500 rounded-full cursor-pointer hover:bg-red-600 transition-colors shadow-lg flex items-center justify-center text-white font-bold"
+                  className="calibration-dot absolute cursor-pointer transition-colors shadow-lg flex items-center justify-center text-white font-bold"
                   style={{
                     left: `${currentCalibrationPoint.x}%`,
                     top: `${currentCalibrationPoint.y}%`,
-                    transform: 'translate(-50%, -50%)',
                   }}
                 >
                   {calibrationIndex + 1}
@@ -694,6 +716,37 @@ export default function ReadingAssessment({
               border-radius: 20px;
               border: 1px solid rgba(255, 255, 255, 0.4);
               box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+            }
+
+            .calibration-dot {
+              width: 40px;
+              height: 40px;
+              background: radial-gradient(circle, #ef4444 0%, #dc2626 100%);
+              border-radius: 50%;
+              transform: translate(-50%, -50%);
+              pointer-events: auto;
+              animation: pulse 1s ease-in-out infinite;
+            }
+
+            .calibration-dot::before {
+              content: '';
+              position: absolute;
+              top: -10px;
+              left: -10px;
+              right: -10px;
+              bottom: -10px;
+              border-radius: 50%;
+            }
+
+            @keyframes pulse {
+              0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+              }
+              50% {
+                transform: translate(-50%, -50%) scale(1.1);
+                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+              }
             }
           `}</style>
         </div>

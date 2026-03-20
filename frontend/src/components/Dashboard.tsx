@@ -3,7 +3,7 @@
  * Displays comprehensive dyslexia assessment results with visualizations
  * Includes recommended exercises based on assessment results
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -40,11 +40,26 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { state } = useDiagnosis();
   const [countedScore, setCountedScore] = useState(0);
+  const detailsRef = useRef<HTMLDivElement>(null);
   const { t, i18n } = useTranslation();
 
   const uiLang = (i18n.language || 'en').split('-')[0].toLowerCase();
 
   const translateIndicator = (value: string) => {
+    if (value.includes('|')) {
+      const [key, paramString] = value.split('|');
+      const params: Record<string, string> = {};
+      if (paramString) {
+        for (const pair of paramString.split(',')) {
+          const [paramKey, paramValue] = pair.split('=');
+          if (paramKey && paramValue) {
+            params[paramKey] = paramValue;
+          }
+        }
+      }
+      return t(key, params);
+    }
+
     if (value.startsWith('results.') || value.startsWith('dashboard.')) {
       return t(value, { defaultValue: value });
     }
@@ -57,7 +72,7 @@ export default function Dashboard() {
       'Prolonged fixation durations noted': 'results.eyeTracking.longDurations',
       'Excessive fixation': 'results.eyeTracking.excessiveFixations',
       'Prolonged fixation': 'results.eyeTracking.longDurations',
-      'Letter reversal patterns noted in handwriting': 'results.handwriting.description',
+      'Letter reversal patterns noted in handwriting': 'results.handwriting.letterReversals',
       'Good cognitive engagement and comprehension': 'results.chatbot.description',
       'Low risk detected. Continue monitoring reading development': 'results.recommendation.low',
       'Moderate risk detected. Consider consultation with reading specialist.':
@@ -73,6 +88,13 @@ export default function Dashboard() {
     if (state.final_classification === 'Moderate Risk') return t('results.recommendation.moderate');
     if (state.final_classification === 'High Risk') return t('results.recommendation.high');
     return t('results.recommendation.low');
+  };
+
+  const scrollToDetails = () => {
+    detailsRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
   };
 
   // Get recommended exercises based on risk score and weak areas
@@ -154,11 +176,15 @@ export default function Dashboard() {
           memoryScore: 'Memory Score',
           attentionScore: 'Attention Score',
           comprehensionScore: 'Comprehension Score',
+          cognitiveRisk: 'Cognitive Risk',
           overallRisk: 'Overall Risk Level',
           eyeTracking: 'Eye-Tracking Analysis',
+          eyeTrackingAnalysis: 'Eye-Tracking Analysis',
           handwriting: 'Handwriting Analysis',
+          handwritingAnalysis: 'Handwriting Analysis',
           finalScore: 'Final Diagnostic Score',
           riskScore: 'Risk Score',
+          recommendations: 'Recommendations',
           disclaimer:
             'This is a screening tool, not a diagnosis. Consult a professional for evaluation.',
           Low: 'Low Risk',
@@ -172,11 +198,15 @@ export default function Dashboard() {
           memoryScore: 'Память',
           attentionScore: 'Внимание',
           comprehensionScore: 'Понимание',
+          cognitiveRisk: 'Когнитивный риск',
           overallRisk: 'Общий уровень риска',
           eyeTracking: 'Анализ движения глаз',
+          eyeTrackingAnalysis: 'Анализ движения глаз',
           handwriting: 'Анализ почерка',
+          handwritingAnalysis: 'Анализ почерка',
           finalScore: 'Итоговый диагностический балл',
           riskScore: 'Балл риска',
+          recommendations: 'Рекомендации',
           disclaimer:
             'Это инструмент скрининга, а не диагноз. Обратитесь к специалисту для оценки.',
           Low: 'Низкий риск',
@@ -190,11 +220,15 @@ export default function Dashboard() {
           memoryScore: 'Жады',
           attentionScore: 'Назар',
           comprehensionScore: 'Түсіну',
+          cognitiveRisk: 'Когнитивтік қауіп',
           overallRisk: 'Жалпы қауіп деңгейі',
           eyeTracking: 'Көз қозғалысын талдау',
+          eyeTrackingAnalysis: 'Көз қозғалысын талдау',
           handwriting: 'Қолжазба талдау',
+          handwritingAnalysis: 'Қолжазба талдау',
           finalScore: 'Қорытынды диагностикалық балл',
           riskScore: 'Қауіп баллы',
+          recommendations: 'Ұсыныстар',
           disclaimer:
             'Бұл скрининг құралы, диагноз емес. Бағалау үшін маманға хабарласыңыз.',
           Low: 'Төмен қауіп',
@@ -214,6 +248,17 @@ export default function Dashboard() {
     const riskRaw = state.final_classification || 'Low Risk';
     const riskKey =
       riskRaw.includes('High') ? 'High' : riskRaw.includes('Moderate') ? 'Moderate' : 'Low';
+
+    const eyeTrackingDescription =
+      state.combined_explanation?.detailed_breakdown.reading[0] || 'results.eyeTracking.normal';
+    const handwritingDescription =
+      state.combined_explanation?.detailed_breakdown.writing[0] || 'results.handwriting.normal';
+
+    const getRiskColor = (riskLevel: string) => {
+      if (riskLevel === 'Low') return '#10b981';
+      if (riskLevel === 'Moderate') return '#f59e0b';
+      return '#ef4444';
+    };
 
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; padding: 30px; color: #1f2937;">
@@ -240,19 +285,53 @@ export default function Dashboard() {
         <p style="font-size: 16px; margin: 10px 0;">
           <strong>${getTranslation('comprehensionScore', language)}:</strong> ${state.chatbot_data?.comprehension_score?.toFixed(1) ?? '—'}/10
         </p>
+        <p style="font-size: 16px; margin: 10px 0;">
+          <strong>${getTranslation('cognitiveRisk', language)}:</strong> ${getTranslation(riskKey, language)}
+        </p>
 
         <hr style="border: none; border-top: 2px solid #e5e7eb; margin: 20px 0;">
 
         <h2 style="font-size: 20px; margin-top: 25px; margin-bottom: 15px;">
-          ${getTranslation('overallRisk', language)}
+          ${getTranslation('eyeTrackingAnalysis', language)}
+        </h2>
+
+        <p style="font-size: 16px; margin: 10px 0;">
+          <strong>${getTranslation('riskScore', language)}:</strong> ${state.backend_prediction?.risk_score?.toFixed(1) ?? '—'}/100
+        </p>
+        <p style="font-size: 14px; margin: 10px 0; color: #6b7280;">
+          ${translateIndicator(eyeTrackingDescription)}
+        </p>
+
+        <hr style="border: none; border-top: 2px solid #e5e7eb; margin: 20px 0;">
+
+        <h2 style="font-size: 20px; margin-top: 25px; margin-bottom: 15px;">
+          ${getTranslation('handwritingAnalysis', language)}
+        </h2>
+
+        <p style="font-size: 16px; margin: 10px 0;">
+          <strong>${getTranslation('riskScore', language)}:</strong> ${(state.writing_data?.handwriting_pipeline?.final_score ?? 0).toFixed(1)}/100
+        </p>
+        <p style="font-size: 14px; margin: 10px 0; color: #6b7280;">
+          ${translateIndicator(handwritingDescription)}
+        </p>
+
+        <hr style="border: none; border-top: 2px solid #e5e7eb; margin: 20px 0;">
+
+        <h2 style="font-size: 20px; margin-top: 25px; margin-bottom: 15px;">
+          ${getTranslation('finalScore', language)}
         </h2>
 
         <p style="font-size: 18px; margin: 15px 0;">
-          ${getTranslation('riskScore', language)}: <strong>${getTranslation(riskKey, language)}</strong>
+          ${getTranslation('overallRisk', language)}: <strong style="color: ${getRiskColor(riskKey)}">${getTranslation(riskKey, language)}</strong>
         </p>
 
         <p style="font-size: 24px; font-weight: bold; color: #6366f1; margin: 15px 0;">
           ${Math.round(state.final_score || 0)}/100
+        </p>
+
+        <p style="font-size: 14px; margin: 15px 0; padding: 15px; background: #f9fafb; border-radius: 8px;">
+          <strong>${getTranslation('recommendations', language)}:</strong><br>
+          ${getLocalizedRecommendation()}
         </p>
 
         <hr style="border: none; border-top: 2px solid #e5e7eb; margin: 30px 0;">
@@ -427,6 +506,105 @@ export default function Dashboard() {
           </p>
         </motion.div>
 
+        {/* Risk Score Card */}
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="results-hero mb-8"
+        >
+          <h1 className="text-4xl font-bold mb-4 text-white">{t('dashboard.title')}</h1>
+          <p className="text-white/90 mb-6">{t('dashboard.subtitle')}</p>
+
+          <div className="risk-score-card">
+            <h2 className="text-2xl font-bold text-text-primary mb-4">{t('dashboard.overallRisk')}</h2>
+            <div className="score-circle">
+              <span className="score-number">{Math.round(countedScore)}</span>
+              <span className="score-max">/100</span>
+            </div>
+
+            <div className="risk-level my-4">
+              <span className={`risk-badge risk-${state.final_classification?.includes('Low') ? 'low' : state.final_classification?.includes('Moderate') ? 'moderate' : 'high'}`}>
+                {getClassificationKey(state.final_classification)}
+              </span>
+            </div>
+
+            <p className="text-text-secondary mb-4">
+              {getLocalizedRecommendation()}
+            </p>
+
+            <p className="text-text-secondary mb-4">
+              {t('dashboard.confidence')}: {(state.combined_explanation.confidence * 100).toFixed(1)}%
+            </p>
+          </div>
+
+          <button onClick={scrollToDetails} className="see-details-btn">
+            {t('dashboard.seeDetails')}
+          </button>
+        </motion.div>
+
+        <div style={{ height: '40px' }} />
+
+        {/* Main Grid */}
+        <div ref={detailsRef} className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Cognitive Profile Radar Chart */}
+          <motion.div
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="glass-card p-6"
+          >
+            <h3 className="text-xl font-bold text-text-primary mb-4">
+              {t('dashboard.cognitiveProfile')}
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <RadarChart data={radarData}>
+                <PolarGrid stroke="rgba(0,0,0,0.1)" />
+                <PolarAngleAxis
+                  dataKey="metric"
+                  tick={{ fill: '#334155', fontSize: 14, fontWeight: 600 }}
+                />
+                <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                <Radar
+                  name="Performance"
+                  dataKey="value"
+                  stroke="#6366F1"
+                  fill="#6366F1"
+                  fillOpacity={0.3}
+                  strokeWidth={3}
+                  dot={{ r: 5, fill: '#6366F1', stroke: '#fff', strokeWidth: 2 }}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </motion.div>
+
+          {/* Feature Importance */}
+          <motion.div
+            initial={{ x: 20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="glass-card p-6"
+          >
+            <h3 className="text-xl font-bold text-text-primary mb-4">
+              {t('dashboard.keyDiagnosticFactors')}
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={featureImportanceData}>
+                <XAxis
+                  dataKey="name"
+                  tick={{ fill: '#64748B', fontSize: 12 }}
+                  angle={-15}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis tick={{ fill: '#64748B' }} />
+                <Tooltip />
+                <Bar dataKey="value" fill="#89CFF0" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </motion.div>
+        </div>
+
         {handwritingPipeline && handwritingStructured && (
           <motion.div
             initial={{ y: 20, opacity: 0 }}
@@ -506,130 +684,6 @@ export default function Dashboard() {
             </div>
           </motion.div>
         )}
-
-        {/* Risk Score Card */}
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="glass-card p-8 mb-8 text-center"
-        >
-          <h2 className="text-2xl font-bold text-text-primary mb-6">
-            {t('dashboard.overallRisk')}
-          </h2>
-
-          {/* Circular Gauge */}
-          <div className="relative w-48 h-48 mx-auto mb-6">
-            <svg className="transform -rotate-90" viewBox="0 0 200 200">
-              {/* Background circle */}
-              <circle
-                cx="100"
-                cy="100"
-                r="80"
-                fill="none"
-                stroke="#E5E7EB"
-                strokeWidth="20"
-              />
-              {/* Progress circle */}
-              <motion.circle
-                cx="100"
-                cy="100"
-                r="80"
-                fill="none"
-                stroke={
-                  state.final_classification === 'Low Risk'
-                    ? '#4CAF50'
-                    : state.final_classification === 'Moderate Risk'
-                    ? '#FF9800'
-                    : '#F44336'
-                }
-                strokeWidth="20"
-                strokeDasharray={`${(countedScore / 100) * 502.4} 502.4`}
-                initial={{ strokeDasharray: '0 502.4' }}
-                animate={{
-                  strokeDasharray: `${(countedScore / 100) * 502.4} 502.4`,
-                }}
-                transition={{ duration: 2, ease: 'easeOut' }}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-5xl font-bold text-text-primary">
-                {Math.round(countedScore)}
-              </span>
-              <span className="text-sm text-text-secondary">{t('dashboard.riskScore')}</span>
-            </div>
-          </div>
-
-          <div className={`inline-block px-6 py-3 rounded-full ${riskColor}`}>
-            <span className="text-white font-bold text-xl">
-              {getClassificationKey(state.final_classification)}
-            </span>
-          </div>
-
-          <p className="mt-4 text-text-secondary">
-            {t('dashboard.confidence')}: {(state.combined_explanation.confidence * 100).toFixed(1)}%
-          </p>
-        </motion.div>
-
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Cognitive Profile Radar Chart */}
-          <motion.div
-            initial={{ x: -20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="glass-card p-6"
-          >
-            <h3 className="text-xl font-bold text-text-primary mb-4">
-              {t('dashboard.cognitiveProfile')}
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <RadarChart data={radarData}>
-                <PolarGrid stroke="rgba(0,0,0,0.1)" />
-                <PolarAngleAxis
-                  dataKey="metric"
-                  tick={{ fill: '#334155', fontSize: 14, fontWeight: 600 }}
-                />
-                <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                <Radar
-                  name="Performance"
-                  dataKey="value"
-                  stroke="#6366F1"
-                  fill="#6366F1"
-                  fillOpacity={0.3}
-                  strokeWidth={3}
-                  dot={{ r: 5, fill: '#6366F1', stroke: '#fff', strokeWidth: 2 }}
-                />
-              </RadarChart>
-            </ResponsiveContainer>
-          </motion.div>
-
-          {/* Feature Importance */}
-          <motion.div
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="glass-card p-6"
-          >
-            <h3 className="text-xl font-bold text-text-primary mb-4">
-              {t('dashboard.keyDiagnosticFactors')}
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={featureImportanceData}>
-                <XAxis
-                  dataKey="name"
-                  tick={{ fill: '#64748B', fontSize: 12 }}
-                  angle={-15}
-                  textAnchor="end"
-                  height={80}
-                />
-                <YAxis tick={{ fill: '#64748B' }} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#89CFF0" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </motion.div>
-        </div>
 
         {/* Explanation Panel */}
         <motion.div
@@ -903,6 +957,74 @@ export default function Dashboard() {
           font-weight: 600;
           color: #6366f1;
           margin-top: 8px;
+        }
+
+        .results-hero {
+          text-align: center;
+          padding: 60px 20px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border-radius: 16px;
+        }
+
+        .risk-score-card {
+          background: white;
+          color: #1f2937;
+          padding: 40px;
+          border-radius: 16px;
+          max-width: 500px;
+          margin: 30px auto;
+        }
+
+        .score-circle {
+          margin: 20px 0;
+        }
+
+        .score-number {
+          font-size: 72px;
+          font-weight: bold;
+          color: #6366f1;
+        }
+
+        .score-max {
+          font-size: 36px;
+          color: #9ca3af;
+        }
+
+        .risk-badge {
+          display: inline-block;
+          padding: 12px 24px;
+          border-radius: 24px;
+          font-size: 20px;
+          font-weight: 600;
+          margin: 20px 0;
+        }
+
+        .risk-badge.risk-low {
+          background: #d1fae5;
+          color: #065f46;
+        }
+
+        .risk-badge.risk-moderate {
+          background: #fed7aa;
+          color: #92400e;
+        }
+
+        .risk-badge.risk-high {
+          background: #fecaca;
+          color: #991b1b;
+        }
+
+        .see-details-btn {
+          background: white;
+          color: #6366f1;
+          padding: 16px 32px;
+          border: none;
+          border-radius: 8px;
+          font-size: 16px;
+          font-weight: 600;
+          cursor: pointer;
+          margin-top: 20px;
         }
       `}</style>
     </div>

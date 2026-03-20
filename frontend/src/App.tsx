@@ -213,10 +213,10 @@ function AppContent() {
                 </h2>
 
                 <div className="mb-6 rounded-xl bg-white/70 p-4 border border-white/60">
-                  <h3 className="text-xl font-bold text-text-primary mb-2">Let's get started!</h3>
-                  <p className="text-text-secondary mb-3">How old is the child taking this test?</p>
+                  <h3 className="text-xl font-bold text-text-primary mb-2">{t('ageSelection.title')}</h3>
+                  <p className="text-text-secondary mb-3">{t('ageSelection.question')}</p>
                   <label htmlFor="child-age" className="block text-sm font-semibold text-text-primary mb-2">
-                    Child's Age
+                    {t('ageSelection.label')}
                   </label>
                   <select
                     id="child-age"
@@ -231,13 +231,13 @@ function AppContent() {
                     }}
                     className="w-full rounded-lg border-2 border-indigo-200 bg-white px-3 py-2 text-text-primary focus:border-indigo-400 focus:outline-none"
                   >
-                    <option value="">Select age...</option>
-                    <option value="5">5 years old</option>
-                    <option value="6">6 years old</option>
-                    <option value="7">7 years old</option>
-                    <option value="8">8 years old</option>
-                    <option value="9">9 years old</option>
-                    <option value="10">10 years old</option>
+                    <option value="">{t('ageSelection.placeholder')}</option>
+                    <option value="5">5 {t('ageSelection.years')}</option>
+                    <option value="6">6 {t('ageSelection.years')}</option>
+                    <option value="7">7 {t('ageSelection.years')}</option>
+                    <option value="8">8 {t('ageSelection.years')}</option>
+                    <option value="9">9 {t('ageSelection.years')}</option>
+                    <option value="10">10 {t('ageSelection.years')}</option>
                   </select>
                   {selectedAge !== '' && (selectedAge < 5 || selectedAge > 10) && (
                     <p className="mt-2 text-sm font-semibold text-red-600">Age must be between 5 and 10.</p>
@@ -325,7 +325,7 @@ function AppContent() {
                   className="bg-white hover:bg-gray-100 disabled:bg-gray-200 disabled:text-gray-500 text-text-primary font-bold text-xl py-4 px-12 rounded-full shadow-lg transition-all"
                   disabled={selectedAge === '' || selectedAge < 5 || selectedAge > 10}
                 >
-                  {t('app.beginAssessment')}
+                  {t('ageSelection.startButton')}
                 </motion.button>
 
                 <motion.button

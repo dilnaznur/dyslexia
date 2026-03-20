@@ -355,6 +355,25 @@ function generateCombinedExplanation(
   writingData: WritingAnalysis | null,
   chatbotData: ChatbotAnalysis | null
 ): CombinedExplanation {
+  const dynamicIndicatorKey = (indicator: string): string => {
+    const entropyMatch = indicator.match(/entropy:\s*([0-9]+\.?[0-9]*)/i);
+    if (entropyMatch) {
+      return `results.eyeTracking.highVariability|entropy=${entropyMatch[1]}`;
+    }
+
+    const fixationMatch = indicator.match(/([0-9]+)\s*fixation/i);
+    if (fixationMatch) {
+      return `results.eyeTracking.excessiveFixations|count=${fixationMatch[1]}`;
+    }
+
+    const durationMatch = indicator.match(/(?:avg|average):?\s*([0-9]+\.?[0-9]*)\s*ms/i);
+    if (durationMatch) {
+      return `results.eyeTracking.longDurations|duration=${durationMatch[1]}`;
+    }
+
+    return indicator;
+  };
+
   const normalizeIndicator = (indicator: string): string => {
     const map: Record<string, string> = {
       'Reading patterns within typical range': 'results.eyeTracking.normal',
@@ -363,14 +382,14 @@ function generateCombinedExplanation(
       'Prolonged fixation durations noted': 'results.eyeTracking.longDurations',
       'Excessive fixation': 'results.eyeTracking.excessiveFixations',
       'Prolonged fixation': 'results.eyeTracking.longDurations',
-      'Letter reversal patterns noted in handwriting': 'results.handwriting.description',
+      'Letter reversal patterns noted in handwriting': 'results.handwriting.letterReversals',
       'Good cognitive engagement and comprehension': 'results.chatbot.description',
       'Below-average memory recall': 'results.indicators.behavioral.lowMemory',
       'Attention challenges observed': 'results.indicators.behavioral.attentionChallenges',
       'Comprehension difficulties noted': 'results.indicators.behavioral.comprehensionDifficulties',
     };
 
-    return map[indicator] || indicator;
+    return map[indicator] || dynamicIndicatorKey(indicator);
   };
 
   const primaryFactors: string[] = [];
@@ -387,10 +406,10 @@ function generateCombinedExplanation(
 
   // Writing indicators
   const writingFlagMap: Record<string, string> = {
-    HIGH_REVERSAL_FREQUENCY: 'results.handwriting.description',
-    IRREGULAR_SPACING: 'results.indicators.handwriting.spacing',
-    MOTOR_CONTROL_CONCERN: 'results.indicators.handwriting.tremor',
-    ORIENTATION_INCONSISTENT: 'results.indicators.handwriting.spacing',
+    HIGH_REVERSAL_FREQUENCY: 'results.handwriting.letterReversals',
+    IRREGULAR_SPACING: 'results.handwriting.irregularSpacing',
+    MOTOR_CONTROL_CONCERN: 'results.handwriting.tremor',
+    ORIENTATION_INCONSISTENT: 'results.handwriting.combined',
   };
 
   if (writingData?.handwriting_pipeline?.clinical_flags?.length) {
@@ -402,7 +421,7 @@ function generateCombinedExplanation(
     }
 
     if (writingData.handwriting_pipeline.final_score >= 45) {
-      primaryFactors.push('results.handwriting.description');
+      primaryFactors.push('results.handwriting.combined');
     }
   }
 
@@ -411,18 +430,18 @@ function generateCombinedExplanation(
     const response = writingData.gemini_response.toLowerCase();
     
     if (response.includes('reversal') || response.includes('mirror')) {
-      const indicator = 'results.handwriting.description';
+      const indicator = 'results.handwriting.letterReversals';
       primaryFactors.push(indicator);
       writingIndicators.push(indicator);
     }
     
     if (response.includes('spacing') || response.includes('inconsistent')) {
-      const indicator = 'results.indicators.handwriting.spacing';
+      const indicator = 'results.handwriting.irregularSpacing';
       writingIndicators.push(indicator);
     }
     
     if (response.includes('tremor') || response.includes('shaky')) {
-      const indicator = 'results.indicators.handwriting.tremor';
+      const indicator = 'results.handwriting.tremor';
       writingIndicators.push(indicator);
     }
     
@@ -430,7 +449,7 @@ function generateCombinedExplanation(
 
   // If no specific issues found, add general indicator
   if (writingData && writingIndicators.length === 0) {
-    writingIndicators.push('results.indicators.handwriting.noConcerns');
+    writingIndicators.push('results.handwriting.normal');
   }
 
   // Behavioral indicators

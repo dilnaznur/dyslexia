@@ -7,6 +7,14 @@
     "practiceExercises": "Practice Exercises",
     "totalTime": "Total time: ~10-15 minutes • 100% confidential • Suitable for ages 5-10"
   },
+  "ageSelection": {
+    "title": "Let's get started!",
+    "question": "How old is the child taking this test?",
+    "label": "Child's Age:",
+    "placeholder": "Select age...",
+    "years": "years old",
+    "startButton": "Start Assessment"
+  },
   "steps": {
     "reading": "Reading",
     "writing": "Writing",
@@ -171,6 +179,7 @@
     "basedOnResults": "Based on your assessment results",
     "viewAll": "View All",
     "startPracticing": "Start Practicing",
+    "seeDetails": "See Detailed Analysis ↓",
     "downloadPDF": "Download PDF Report",
     "exerciseTip": "Tip: Regular practice with these exercises can help improve reading and writing skills. We recommend 10-15 minutes of practice 3-4 times per week for best results.",
     "radarMetrics": {
@@ -195,12 +204,18 @@
       "description": "Reading patterns within typical range",
       "normal": "Reading patterns within typical range",
       "irregularRhythm": "Irregular temporal reading rhythm detected",
-      "excessiveFixations": "Excessive fixation count observed",
-      "longDurations": "Prolonged fixation durations noted"
+      "highVariability": "High variability in reading patterns (entropy: {{entropy}})",
+      "excessiveFixations": "Excessive fixation count observed ({{count}} fixations)",
+      "longDurations": "Prolonged fixation durations noted (avg: {{duration}}ms)"
     },
     "handwriting": {
       "title": "Writing",
-      "description": "Letter reversal patterns noted in handwriting"
+      "description": "Letter reversal patterns noted in handwriting",
+      "normal": "No significant issues detected in handwriting",
+      "letterReversals": "Letter reversal patterns noted in handwriting",
+      "irregularSpacing": "Irregular spacing between letters observed",
+      "tremor": "Hand tremor detected in letter formation",
+      "combined": "Multiple handwriting markers detected"
     },
     "chatbot": {
       "title": "Behavior",
