@@ -196,6 +196,63 @@
       "tviScore": "TVI Score"
     }
   },
+  "charts": {
+    "reading": "Reading",
+    "eyeTracking": "Eye-Tracking",
+    "handwriting": "Handwriting",
+    "memory": "Memory",
+    "attention": "Attention"
+  },
+  "handwritingPipeline": {
+    "title": "Handwriting Analysis Pipeline",
+    "subtitle": "Structured clinical engineering flow with age calibration and cross-validation.",
+    "stage1": {
+      "title": "Gemini Vision Analysis",
+      "description": "Structured clinical prompt -> 4 categories analyzed"
+    },
+    "stage2": {
+      "title": "Age-Based Calibration",
+      "description": "Adjusted for {{age}}-year-old developmental norms"
+    },
+    "stage3": {
+      "title": "Clinical Threshold Validation",
+      "description": "Checked against peer-reviewed standards"
+    },
+    "stage4": {
+      "title": "OpenCV Cross-Validation",
+      "description": "Computer vision confirms findings"
+    },
+    "categories": {
+      "mirrorWriting": "Mirror writing",
+      "spatial": "Spatial",
+      "formation": "Formation",
+      "orientation": "Orientation"
+    },
+    "factors": {
+      "spacing": "Spacing factor",
+      "formation": "Formation factor",
+      "orientation": "Orientation factor"
+    },
+    "rawScore": "Raw Score",
+    "calibrated": "Calibrated",
+    "validated": "Validated",
+    "final": "Final",
+    "checksPassed": "Checks passed",
+    "agreement": "Agreement",
+    "status": "Status",
+    "confirmed": "Confirmed",
+    "partial": "Partial",
+    "flags": {
+      "HIGH_REVERSAL_FREQUENCY": "High reversal frequency",
+      "IRREGULAR_SPACING": "Irregular spacing",
+      "MOTOR_CONTROL_CONCERN": "Motor control concern",
+      "ORIENTATION_INCONSISTENT": "Orientation inconsistent"
+    },
+    "summary": {
+      "title": "Final Handwriting Risk Score",
+      "description": "Processed through 4-stage clinical validation pipeline"
+    }
+  },
   "results": {
     "whyThisResult": "Why this result?",
     "keyIndicators": "Key Indicators",

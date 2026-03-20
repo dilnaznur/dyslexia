@@ -90,6 +90,9 @@ export default function Dashboard() {
     return t('results.recommendation.low');
   };
 
+  const translatePipelineFlag = (flag: string) =>
+    t(`handwritingPipeline.flags.${flag}`, { defaultValue: flag });
+
   const scrollToDetails = () => {
     detailsRef.current?.scrollIntoView({
       behavior: 'smooth',
@@ -419,31 +422,31 @@ export default function Dashboard() {
   // Prepare radar chart data
   const radarData = [
     {
-      metric: t('dashboard.radarMetrics.reading'),
+      metric: t('charts.reading'),
       value: state.backend_prediction
         ? 100 - state.backend_prediction.risk_score
         : 50,
       fullMark: 100,
     },
     {
-      metric: t('dashboard.radarMetrics.eyeTracking'),
+      metric: t('charts.eyeTracking'),
       value: state.reading_data?.regression_index
         ? (1 - state.reading_data.regression_index) * 100
         : 50,
       fullMark: 100,
     },
     {
-      metric: t('dashboard.radarMetrics.handwriting'),
+      metric: t('charts.handwriting'),
       value: handwritingPipeline ? 100 - handwritingPipeline.final_score : 50,
       fullMark: 100,
     },
     {
-      metric: t('dashboard.radarMetrics.memory'),
+      metric: t('charts.memory'),
       value: state.chatbot_data ? state.chatbot_data.memory_score * 10 : 50,
       fullMark: 100,
     },
     {
-      metric: t('dashboard.radarMetrics.attention'),
+      metric: t('charts.attention'),
       value: state.chatbot_data ? state.chatbot_data.attention_score * 10 : 50,
       fullMark: 100,
     },
@@ -612,75 +615,75 @@ export default function Dashboard() {
             transition={{ delay: 0.45 }}
             className="glass-card p-8 mb-8"
           >
-            <h3 className="text-2xl font-bold text-text-primary mb-2">Handwriting Analysis Pipeline</h3>
+            <h3 className="text-2xl font-bold text-text-primary mb-2">{t('handwritingPipeline.title')}</h3>
             <p className="text-text-secondary mb-6">
-              Structured clinical engineering flow with age calibration and cross-validation.
+              {t('handwritingPipeline.subtitle')}
             </p>
 
             <div className="pipeline-stages">
               <div className="stage">
                 <div className="stage-number">1</div>
                 <div className="stage-content">
-                  <h4 className="font-bold text-text-primary">Gemini Vision Analysis</h4>
-                  <p className="text-sm text-text-secondary">Structured clinical prompt -&gt; 4 categories analyzed</p>
+                  <h4 className="font-bold text-text-primary">{t('handwritingPipeline.stage1.title')}</h4>
+                  <p className="text-sm text-text-secondary">{t('handwritingPipeline.stage1.description')}</p>
                   <div className="stage-data">
-                    <span>Mirror writing: {handwritingPipeline.category_scores.mirror_writing.toFixed(1)}/100</span>
-                    <span>Spatial: {handwritingPipeline.category_scores.spatial.toFixed(1)}/100</span>
-                    <span>Formation: {handwritingPipeline.category_scores.formation.toFixed(1)}/100</span>
-                    <span>Orientation: {handwritingPipeline.category_scores.orientation.toFixed(1)}/100</span>
+                    <span>{t('handwritingPipeline.categories.mirrorWriting')}: {handwritingPipeline.category_scores.mirror_writing.toFixed(1)}/100</span>
+                    <span>{t('handwritingPipeline.categories.spatial')}: {handwritingPipeline.category_scores.spatial.toFixed(1)}/100</span>
+                    <span>{t('handwritingPipeline.categories.formation')}: {handwritingPipeline.category_scores.formation.toFixed(1)}/100</span>
+                    <span>{t('handwritingPipeline.categories.orientation')}: {handwritingPipeline.category_scores.orientation.toFixed(1)}/100</span>
                   </div>
-                  <div className="stage-score">Raw Score: {handwritingPipeline.gemini_raw_score.toFixed(1)}/100</div>
+                  <div className="stage-score">{t('handwritingPipeline.rawScore')}: {handwritingPipeline.gemini_raw_score.toFixed(1)}/100</div>
                 </div>
               </div>
 
               <div className="stage">
                 <div className="stage-number">2</div>
                 <div className="stage-content">
-                  <h4 className="font-bold text-text-primary">Age-Based Calibration</h4>
-                  <p className="text-sm text-text-secondary">Adjusted for {childAge ?? 8}-year-old developmental norms</p>
+                  <h4 className="font-bold text-text-primary">{t('handwritingPipeline.stage2.title')}</h4>
+                  <p className="text-sm text-text-secondary">{t('handwritingPipeline.stage2.description', { age: childAge ?? 8 })}</p>
                   <div className="stage-data">
-                    <span>Spacing factor: {handwritingPipeline.pipeline_breakdown.stage1_age_adjustment.spacing}x</span>
-                    <span>Formation factor: {handwritingPipeline.pipeline_breakdown.stage1_age_adjustment.formation}x</span>
-                    <span>Orientation factor: {handwritingPipeline.pipeline_breakdown.stage1_age_adjustment.orientation}x</span>
+                    <span>{t('handwritingPipeline.factors.spacing')}: {handwritingPipeline.pipeline_breakdown.stage1_age_adjustment.spacing}x</span>
+                    <span>{t('handwritingPipeline.factors.formation')}: {handwritingPipeline.pipeline_breakdown.stage1_age_adjustment.formation}x</span>
+                    <span>{t('handwritingPipeline.factors.orientation')}: {handwritingPipeline.pipeline_breakdown.stage1_age_adjustment.orientation}x</span>
                   </div>
-                  <div className="stage-score">Calibrated: {handwritingPipeline.age_calibrated_score.toFixed(1)}/100</div>
+                  <div className="stage-score">{t('handwritingPipeline.calibrated')}: {handwritingPipeline.age_calibrated_score.toFixed(1)}/100</div>
                 </div>
               </div>
 
               <div className="stage">
                 <div className="stage-number">3</div>
                 <div className="stage-content">
-                  <h4 className="font-bold text-text-primary">Clinical Threshold Validation</h4>
-                  <p className="text-sm text-text-secondary">Checked against peer-reviewed standards</p>
+                  <h4 className="font-bold text-text-primary">{t('handwritingPipeline.stage3.title')}</h4>
+                  <p className="text-sm text-text-secondary">{t('handwritingPipeline.stage3.description')}</p>
                   <div className="stage-data">
                     {handwritingPipeline.clinical_flags.map((flag) => (
-                      <span key={flag} className="flag">{flag}</span>
+                      <span key={flag} className="flag">{translatePipelineFlag(flag)}</span>
                     ))}
-                    <span>Checks passed: {handwritingPipeline.checks_passed}/4</span>
+                    <span>{t('handwritingPipeline.checksPassed')}: {handwritingPipeline.checks_passed}/4</span>
                   </div>
-                  <div className="stage-score">Validated</div>
+                  <div className="stage-score">{t('handwritingPipeline.validated')}</div>
                 </div>
               </div>
 
               <div className="stage">
                 <div className="stage-number">4</div>
                 <div className="stage-content">
-                  <h4 className="font-bold text-text-primary">OpenCV Cross-Validation</h4>
-                  <p className="text-sm text-text-secondary">Computer vision confirms findings</p>
+                  <h4 className="font-bold text-text-primary">{t('handwritingPipeline.stage4.title')}</h4>
+                  <p className="text-sm text-text-secondary">{t('handwritingPipeline.stage4.description')}</p>
                   <div className="stage-data">
-                    <span>Agreement: {handwritingPipeline.cv_agreement}%</span>
-                    <span>Status: {handwritingPipeline.cv_confirmed ? 'Confirmed' : 'Partial'}</span>
+                    <span>{t('handwritingPipeline.agreement')}: {handwritingPipeline.cv_agreement}%</span>
+                    <span>{t('handwritingPipeline.status')}: {handwritingPipeline.cv_confirmed ? t('handwritingPipeline.confirmed') : t('handwritingPipeline.partial')}</span>
                   </div>
-                  <div className="stage-score">Final: {handwritingPipeline.final_score.toFixed(1)}/100</div>
+                  <div className="stage-score">{t('handwritingPipeline.final')}: {handwritingPipeline.final_score.toFixed(1)}/100</div>
                 </div>
               </div>
             </div>
 
             <div className="pipeline-summary mt-6 rounded-xl bg-white/60 p-4 border border-indigo-100">
               <h4 className="font-bold text-text-primary">
-                Final Handwriting Risk Score: {handwritingPipeline.final_score.toFixed(1)}/100
+                {t('handwritingPipeline.summary.title')}: {handwritingPipeline.final_score.toFixed(1)}/100
               </h4>
-              <p className="text-sm text-text-secondary">Processed through 4-stage clinical validation pipeline</p>
+              <p className="text-sm text-text-secondary">{t('handwritingPipeline.summary.description')}</p>
             </div>
           </motion.div>
         )}

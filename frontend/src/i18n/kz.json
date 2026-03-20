@@ -196,6 +196,63 @@
       "tviScore": "TVI балы"
     }
   },
+  "charts": {
+    "reading": "Оқу",
+    "eyeTracking": "Көз қадағалау",
+    "handwriting": "Қолжазба",
+    "memory": "Жады",
+    "attention": "Назар"
+  },
+  "handwritingPipeline": {
+    "title": "Қолжазба талдау - Өңдеу процесі",
+    "subtitle": "Жас калибрлеуі және айқас тексеру арқылы құрылымдық клиникалық ағым.",
+    "stage1": {
+      "title": "Gemini Vision талдауы",
+      "description": "Құрылымды клиникалық промпт -> 4 санат талдауы"
+    },
+    "stage2": {
+      "title": "Жасқа негізделген калибрлеу",
+      "description": "{{age}} жастағы баланың даму нормаларына реттелді"
+    },
+    "stage3": {
+      "title": "Клиникалық табалдырық тексеру",
+      "description": "Рецензияланған стандарттармен тексерілді"
+    },
+    "stage4": {
+      "title": "OpenCV айқас тексеру",
+      "description": "Компьютерлік көру нәтижелерді растайды"
+    },
+    "categories": {
+      "mirrorWriting": "Айна жазу",
+      "spatial": "Кеңістіктік",
+      "formation": "Қалыптастыру",
+      "orientation": "Бағдарлау"
+    },
+    "factors": {
+      "spacing": "Аралық факторы",
+      "formation": "Қалыптастыру факторы",
+      "orientation": "Бағдарлау факторы"
+    },
+    "rawScore": "Бастапқы балл",
+    "calibrated": "Калибрленген",
+    "validated": "Тексерілді",
+    "final": "Қорытынды",
+    "checksPassed": "Тексерулер өтті",
+    "agreement": "Келісім",
+    "status": "Мәртебе",
+    "confirmed": "Расталды",
+    "partial": "Ішінара",
+    "flags": {
+      "HIGH_REVERSAL_FREQUENCY": "Айна әріптерінің жиілігі жоғары",
+      "IRREGULAR_SPACING": "Аралық біркелкі емес",
+      "MOTOR_CONTROL_CONCERN": "Қимыл-қозғалыс бақылауында мәселе",
+      "ORIENTATION_INCONSISTENT": "Әріп бағдары тұрақсыз"
+    },
+    "summary": {
+      "title": "Қолжазба қауіпінің қорытынды баллы",
+      "description": "4-кезеңді клиникалық тексеру процесі арқылы өңделді"
+    }
+  },
   "results": {
     "whyThisResult": "Неліктен мұндай нәтиже?",
     "keyIndicators": "Негізгі көрсеткіштер",
