@@ -339,6 +339,24 @@ function generateCombinedExplanation(
   writingData: WritingAnalysis | null,
   chatbotData: ChatbotAnalysis | null
 ): CombinedExplanation {
+  const normalizeIndicator = (indicator: string): string => {
+    const map: Record<string, string> = {
+      'Reading patterns within typical range': 'results.eyeTracking.normal',
+      'Irregular temporal reading rhythm detected': 'results.eyeTracking.irregularRhythm',
+      'Excessive fixation count observed': 'results.eyeTracking.excessiveFixations',
+      'Prolonged fixation durations noted': 'results.eyeTracking.longDurations',
+      'Excessive fixation': 'results.eyeTracking.excessiveFixations',
+      'Prolonged fixation': 'results.eyeTracking.longDurations',
+      'Letter reversal patterns noted in handwriting': 'results.handwriting.description',
+      'Good cognitive engagement and comprehension': 'results.chatbot.description',
+      'Below-average memory recall': 'results.indicators.behavioral.lowMemory',
+      'Attention challenges observed': 'results.indicators.behavioral.attentionChallenges',
+      'Comprehension difficulties noted': 'results.indicators.behavioral.comprehensionDifficulties',
+    };
+
+    return map[indicator] || indicator;
+  };
+
   const primaryFactors: string[] = [];
   const readingIndicators: string[] = [];
   const writingIndicators: string[] = [];
@@ -346,8 +364,9 @@ function generateCombinedExplanation(
 
   // Reading indicators
   if (backendPrediction.explanation.primary_indicators.length > 0) {
-    primaryFactors.push(...backendPrediction.explanation.primary_indicators);
-    readingIndicators.push(...backendPrediction.explanation.primary_indicators);
+    const normalized = backendPrediction.explanation.primary_indicators.map(normalizeIndicator);
+    primaryFactors.push(...normalized);
+    readingIndicators.push(...normalized);
   }
 
   // Writing indicators

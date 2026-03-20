@@ -11,7 +11,7 @@ import confetti from 'canvas-confetti';
 import InstructionModal from './InstructionModal';
 import { useTranslation } from 'react-i18next';
 import { SPEECH_LANG } from '@/i18n';
-import { speakForChildren } from '@/lib/speech';
+import { ensureVoicesLoaded, speakForChildren } from '@/lib/speech';
 
 // ============================================================================
 // Types & Constants
@@ -305,10 +305,17 @@ export default function AIChatbot({ onComplete, onSkip }: AIChatbotProps) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [mcSelected, setMcSelected] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
+  const [interimText, setInterimText] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    void ensureVoicesLoaded().then((voices) => {
+      console.log('Voices loaded:', voices.length);
+    });
+  }, []);
 
   // Auto-scroll
   useEffect(() => {
@@ -320,6 +327,7 @@ export default function AIChatbot({ onComplete, onSkip }: AIChatbotProps) {
     (text: string) => {
       if (!audioEnabled) return;
       setIsSpeaking(true);
+      console.log('Utterance created:', text);
       void speakText(text, speechLang).then((utt) => {
         if (!utt) {
           setIsSpeaking(false);
@@ -335,7 +343,10 @@ export default function AIChatbot({ onComplete, onSkip }: AIChatbotProps) {
   // Initialize speech recognition for voice input (Q1, Q4, Q5)
   useEffect(() => {
     const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-    if (!SpeechRecognition) return;
+    if (!SpeechRecognition) {
+      recognitionRef.current = null;
+      return;
+    }
 
     const recognition = new SpeechRecognition();
     recognition.continuous = false;
@@ -343,46 +354,95 @@ export default function AIChatbot({ onComplete, onSkip }: AIChatbotProps) {
     recognition.lang = speechLang;
 
     recognition.onstart = () => {
+      console.log('Recognition started');
       setIsListening(true);
     };
 
     recognition.onend = () => {
       setIsListening(false);
+      setInterimText('');
     };
 
     recognition.onresult = (event: any) => {
-      let interimTranscript = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          setInputValue((prev) => (prev + transcript).trim());
-        } else {
-          interimTranscript += transcript;
-        }
+      let transcript = '';
+      for (let i = 0; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
       }
-      if (interimTranscript) {
-        setInputValue((prev) => prev.split(' ').slice(0, -1).join(' '));
+
+      const latestResult = event.results[event.results.length - 1];
+      const isFinal = !!latestResult?.isFinal;
+
+      console.log('Transcript:', transcript);
+      console.log('Is final:', isFinal);
+
+      if (isFinal) {
+        setInputValue(transcript.trim());
+        setInterimText('');
+        setIsListening(false);
+      } else {
+        setInterimText(transcript.trim());
       }
     };
 
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
       setIsListening(false);
+      setInterimText('');
+
+      if (event.error === 'no-speech') {
+        alert('No speech detected. Please try again.');
+      } else if (event.error === 'not-allowed') {
+        alert('Microphone permission denied. Please allow microphone access.');
+      }
     };
 
     recognitionRef.current = recognition;
+
+    return () => {
+      recognition.onstart = null;
+      recognition.onend = null;
+      recognition.onresult = null;
+      recognition.onerror = null;
+      recognition.stop();
+    };
   }, [speechLang]);
 
   // Handle microphone button click
   const handleVoiceInput = useCallback(() => {
-    if (!recognitionRef.current) return;
+    if (!recognitionRef.current) {
+      alert('Speech recognition not supported in this browser');
+      return;
+    }
 
     if (isListening) {
       recognitionRef.current.stop();
       setIsListening(false);
+      setInterimText('');
     } else {
       recognitionRef.current.lang = speechLang;
-      recognitionRef.current.start();
+      try {
+        recognitionRef.current.start();
+      } catch (error) {
+        console.error('Failed to start recognition:', error);
+        const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+        if (!SpeechRecognition) return;
+        const recreated = new SpeechRecognition();
+        recreated.continuous = false;
+        recreated.interimResults = true;
+        recreated.lang = speechLang;
+        recreated.onstart = () => {
+          console.log('Recognition started');
+          setIsListening(true);
+        };
+        recreated.onend = () => {
+          setIsListening(false);
+          setInterimText('');
+        };
+        recreated.onresult = recognitionRef.current.onresult;
+        recreated.onerror = recognitionRef.current.onerror;
+        recognitionRef.current = recreated;
+        recognitionRef.current.start();
+      }
     }
   }, [isListening, speechLang]);
 
@@ -625,7 +685,15 @@ export default function AIChatbot({ onComplete, onSkip }: AIChatbotProps) {
                       {/* Speaker button on assistant messages */}
                       {msg.role === 'assistant' && (
                         <button
-                          onClick={() => void speakText(msg.content, speechLang)}
+                          onClick={() => {
+                            console.log('Speaker clicked');
+                            console.log('Voices available:', window.speechSynthesis.getVoices().length);
+                            console.log('Speech synthesis speaking:', window.speechSynthesis.speaking);
+                            setIsSpeaking(true);
+                            void speakText(msg.content, speechLang).then(() => {
+                              window.setTimeout(() => setIsSpeaking(false), 2000);
+                            });
+                          }}
                           className="absolute -right-3 -top-3 bg-white rounded-full p-1 shadow border border-indigo-100 hover:bg-indigo-50 transition-colors"
                           title={t('chatbot.listenMsg')}
                         >
@@ -707,7 +775,7 @@ export default function AIChatbot({ onComplete, onSkip }: AIChatbotProps) {
                     isListening
                       ? 'bg-red-500 hover:bg-red-600 ring-4 ring-red-300'
                       : 'bg-gradient-to-r from-blue-400 to-cyan-500 hover:from-blue-500 hover:to-cyan-600'
-                  } disabled:from-gray-300 disabled:to-gray-300 text-white p-3 rounded-full transition-all hover:scale-105 shadow-md`}
+                  } ${isListening ? 'listening' : ''} disabled:from-gray-300 disabled:to-gray-300 text-white p-3 rounded-full transition-all hover:scale-105 shadow-md`}
                   title={isListening ? t('chatbot.stopListening') || 'Stop listening' : t('chatbot.startListening') || 'Start voice input'}
                 >
                   {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
@@ -721,6 +789,7 @@ export default function AIChatbot({ onComplete, onSkip }: AIChatbotProps) {
                 </button>
               </div>
             )}
+            {interimText && <p className="interim mt-2">Hearing: {interimText}</p>}
           </div>
         )}
 

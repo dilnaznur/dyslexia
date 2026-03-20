@@ -192,7 +192,11 @@
     "keyIndicators": "Негізгі көрсеткіштер",
     "eyeTracking": {
       "title": "Оқу",
-      "description": "Оқу үлгілері қалыпты диапазонда"
+      "description": "Оқу үлгілері қалыпты диапазонда",
+      "normal": "Оқу үлгілері қалыпты диапазонда",
+      "irregularRhythm": "Тұрақсыз оқу ритмі анықталды",
+      "excessiveFixations": "Артық фиксация саны байқалды",
+      "longDurations": "Ұзақ фиксация ұзақтығы байқалды"
     },
     "handwriting": {
       "title": "Жазу",

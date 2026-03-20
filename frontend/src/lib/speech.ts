@@ -3,6 +3,8 @@
 
 type VoicePreferenceMap = Record<string, string[]>;
 
+let voicesLoaded = false;
+
 const voicePreferences: VoicePreferenceMap = {
   en: ['Samantha', 'Karen', 'Google UK English Female', 'Microsoft Zira'],
   ru: ['Milena', 'Google русский', 'Microsoft Irina'],
@@ -52,7 +54,10 @@ export function ensureVoicesLoaded(timeoutMs = 2000): Promise<SpeechSynthesisVoi
 
   const synth = window.speechSynthesis;
   const existing = synth.getVoices();
-  if (existing && existing.length > 0) return Promise.resolve(existing);
+  if (existing && existing.length > 0) {
+    voicesLoaded = true;
+    return Promise.resolve(existing);
+  }
 
   return new Promise((resolve) => {
     let done = false;
@@ -60,7 +65,9 @@ export function ensureVoicesLoaded(timeoutMs = 2000): Promise<SpeechSynthesisVoi
     const finish = () => {
       if (done) return;
       done = true;
-      resolve(synth.getVoices());
+      const loaded = synth.getVoices();
+      voicesLoaded = loaded.length > 0;
+      resolve(loaded);
     };
 
     const timer = window.setTimeout(finish, timeoutMs);
@@ -85,7 +92,11 @@ export async function speakForChildren(
 ): Promise<SpeechSynthesisUtterance | null> {
   if (!('speechSynthesis' in window)) return null;
 
-  await ensureVoicesLoaded();
+  window.speechSynthesis.cancel();
+
+  if (!voicesLoaded) {
+    await ensureVoicesLoaded();
+  }
 
   const utterance = new SpeechSynthesisUtterance(text);
 
@@ -94,19 +105,41 @@ export async function speakForChildren(
 
   // CRITICAL: Select best voice (not default)
   const bestVoice = getBestVoiceForLanguage(language);
-  if (bestVoice) utterance.voice = bestVoice;
+  if (bestVoice) {
+    utterance.voice = bestVoice;
+    console.log('Using voice:', bestVoice.name);
+  } else {
+    console.warn('No good voice found, using default');
+  }
 
   // CRITICAL: Child-friendly settings
   utterance.pitch = 1.2; // Higher pitch (1.0 = normal, 1.2 = friendly)
   utterance.rate = 0.85; // Slightly slower for clarity (1.0 = normal)
   utterance.volume = 1.0; // Full volume
 
-  // Speak
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
+  utterance.onerror = (event) => {
+    console.error('Speech error:', event);
+    alert('Audio playback failed. Please try again.');
+  };
 
-  // eslint-disable-next-line no-console
-  if (bestVoice) console.log(`Speaking with voice: ${bestVoice.name}`);
+  utterance.onstart = () => {
+    console.log('Speech started');
+  };
+
+  utterance.onend = () => {
+    console.log('Speech ended');
+  };
+
+  // Speak
+  window.speechSynthesis.speak(utterance);
+  console.log('Speaking:', window.speechSynthesis.speaking);
+
+  // iOS/Safari sometimes needs a retry kick.
+  if (!window.speechSynthesis.speaking) {
+    window.setTimeout(() => {
+      window.speechSynthesis.speak(utterance);
+    }, 100);
+  }
 
   return utterance;
 }

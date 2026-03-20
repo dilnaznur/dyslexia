@@ -192,7 +192,11 @@
     "keyIndicators": "Key Indicators",
     "eyeTracking": {
       "title": "Reading",
-      "description": "Reading patterns within typical range"
+      "description": "Reading patterns within typical range",
+      "normal": "Reading patterns within typical range",
+      "irregularRhythm": "Irregular temporal reading rhythm detected",
+      "excessiveFixations": "Excessive fixation count observed",
+      "longDurations": "Prolonged fixation durations noted"
     },
     "handwriting": {
       "title": "Writing",

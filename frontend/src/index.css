@@ -147,3 +147,25 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+button.listening {
+  background: #ef4444;
+  color: white;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.interim {
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 14px;
+}

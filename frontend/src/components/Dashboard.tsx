@@ -52,9 +52,17 @@ export default function Dashboard() {
     // Backward compatibility for any previously stored raw English strings.
     const legacyMap: Record<string, string> = {
       'Reading patterns within typical range': 'results.eyeTracking.description',
+      'Irregular temporal reading rhythm detected': 'results.eyeTracking.irregularRhythm',
+      'Excessive fixation count observed': 'results.eyeTracking.excessiveFixations',
+      'Prolonged fixation durations noted': 'results.eyeTracking.longDurations',
+      'Excessive fixation': 'results.eyeTracking.excessiveFixations',
+      'Prolonged fixation': 'results.eyeTracking.longDurations',
       'Letter reversal patterns noted in handwriting': 'results.handwriting.description',
       'Good cognitive engagement and comprehension': 'results.chatbot.description',
       'Low risk detected. Continue monitoring reading development': 'results.recommendation.low',
+      'Moderate risk detected. Consider consultation with reading specialist.':
+        'results.recommendation.moderate',
+      'High risk detected. Professional assessment recommended.': 'results.recommendation.high',
     };
     const key = legacyMap[value];
     return key ? t(key) : value;
@@ -134,6 +142,8 @@ export default function Dashboard() {
 
   // ====== PDF Report Generation ======
   const generatePDFReport = () => {
+    console.log('PDF function called');
+
     // Helper function for translations
     function getTranslation(key: string, language: string) {
       const translations: Record<string, Record<string, string>> = {
@@ -197,79 +207,89 @@ export default function Dashboard() {
     }
 
     const language = uiLang === 'kk' ? 'kz' : uiLang;
+    console.log('Generating PDF...');
+    console.log('Results:', state);
+    console.log('Language:', language);
 
     const riskRaw = state.final_classification || 'Low Risk';
     const riskKey =
       riskRaw.includes('High') ? 'High' : riskRaw.includes('Moderate') ? 'Moderate' : 'Low';
 
     const htmlContent = `
-      <!DOCTYPE html>
-      <html lang="${language}">
-      <head>
-        <meta charset="UTF-8">
-        <style>
-          @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap');
-          body {
-            font-family: 'Noto Sans', Arial, sans-serif;
-            padding: 20px;
-            color: #1f2937;
-          }
-          h1 { font-size: 24px; margin-bottom: 10px; }
-          h2 { font-size: 18px; margin-top: 20px; }
-          p { font-size: 14px; line-height: 1.6; }
-          .score { font-size: 20px; font-weight: bold; color: #6366f1; }
-          .date { color: #6b7280; font-size: 12px; }
-        </style>
-      </head>
-      <body>
-        <h1>${getTranslation('mindstepReport', language)}</h1>
-        <p class="date">${getTranslation('date', language)}: ${new Date().toLocaleDateString()}</p>
+      <div style="font-family: Arial, sans-serif; padding: 30px; color: #1f2937;">
+        <h1 style="font-size: 28px; margin-bottom: 10px; color: #6366f1;">
+          ${getTranslation('mindstepReport', language)}
+        </h1>
 
-        <h2>${getTranslation('assessmentResults', language)}</h2>
-        <p>${getTranslation('memoryScore', language)}: <span class="score">${state.chatbot_data?.memory_score?.toFixed(1) ?? '—'}/10</span></p>
-        <p>${getTranslation('attentionScore', language)}: <span class="score">${state.chatbot_data?.attention_score?.toFixed(1) ?? '—'}/10</span></p>
-        <p>${getTranslation('comprehensionScore', language)}: <span class="score">${state.chatbot_data?.comprehension_score?.toFixed(1) ?? '—'}/10</span></p>
+        <p style="color: #6b7280; font-size: 14px; margin-bottom: 30px;">
+          ${getTranslation('date', language)}: ${new Date().toLocaleDateString()}
+        </p>
 
-        <h2>${getTranslation('overallRisk', language)}</h2>
-        <p class="score">${getTranslation(riskKey, language)}</p>
+        <hr style="border: none; border-top: 2px solid #e5e7eb; margin: 20px 0;">
 
-        <h2>${getTranslation('eyeTracking', language)}</h2>
-        <p>${getTranslation('riskScore', language)}: ${state.backend_prediction?.risk_score?.toFixed(1) ?? '—'}/100</p>
+        <h2 style="font-size: 20px; margin-top: 25px; margin-bottom: 15px;">
+          ${getTranslation('assessmentResults', language)}
+        </h2>
 
-        <h2>${getTranslation('handwriting', language)}</h2>
-        <p>${getTranslation('riskScore', language)}: ${state.writing_data ? Math.round(state.final_score || 0) : '—'}/100</p>
+        <p style="font-size: 16px; margin: 10px 0;">
+          <strong>${getTranslation('memoryScore', language)}:</strong> ${state.chatbot_data?.memory_score?.toFixed(1) ?? '—'}/10
+        </p>
+        <p style="font-size: 16px; margin: 10px 0;">
+          <strong>${getTranslation('attentionScore', language)}:</strong> ${state.chatbot_data?.attention_score?.toFixed(1) ?? '—'}/10
+        </p>
+        <p style="font-size: 16px; margin: 10px 0;">
+          <strong>${getTranslation('comprehensionScore', language)}:</strong> ${state.chatbot_data?.comprehension_score?.toFixed(1) ?? '—'}/10
+        </p>
 
-        <h2>${getTranslation('finalScore', language)}</h2>
-        <p class="score">${Math.round(state.final_score || 0)}/100</p>
+        <hr style="border: none; border-top: 2px solid #e5e7eb; margin: 20px 0;">
 
-        <p style="margin-top: 40px; font-size: 12px; color: #6b7280;">
+        <h2 style="font-size: 20px; margin-top: 25px; margin-bottom: 15px;">
+          ${getTranslation('overallRisk', language)}
+        </h2>
+
+        <p style="font-size: 18px; margin: 15px 0;">
+          ${getTranslation('riskScore', language)}: <strong>${getTranslation(riskKey, language)}</strong>
+        </p>
+
+        <p style="font-size: 24px; font-weight: bold; color: #6366f1; margin: 15px 0;">
+          ${Math.round(state.final_score || 0)}/100
+        </p>
+
+        <hr style="border: none; border-top: 2px solid #e5e7eb; margin: 30px 0;">
+
+        <p style="font-size: 12px; color: #6b7280; margin-top: 40px;">
           ${getTranslation('disclaimer', language)}
         </p>
-      </body>
-      </html>
+      </div>
     `;
 
-    const wrapper = document.createElement('div');
-    wrapper.style.position = 'fixed';
-    wrapper.style.left = '-99999px';
-    wrapper.style.top = '0';
-    wrapper.innerHTML = htmlContent;
-    document.body.appendChild(wrapper);
+    console.log('HTML content length:', htmlContent.length);
+    console.log('HTML content:', htmlContent.substring(0, 100));
 
     const options = {
-      margin: 10,
+      margin: 15,
       filename: `MindStep_Report_${new Date().toISOString().split('T')[0]}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     };
 
+    console.log('PDF options:', options);
+
     html2pdf()
-      .from(wrapper)
       .set(options)
+      .from(htmlContent)
       .save()
-      .finally(() => {
-        document.body.removeChild(wrapper);
+      .then(() => {
+        console.log('PDF generated successfully');
+      })
+      .catch((error: unknown) => {
+        console.error('PDF generation failed:', error);
+        alert('Failed to generate PDF. Please try again.');
       });
   };
 
@@ -546,18 +566,25 @@ export default function Dashboard() {
               {t('dashboard.primaryIndicators')}
             </h4>
             <div className="space-y-2">
-              {state.combined_explanation.primary_factors.map((factor, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ x: -10, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.5 + index * 0.1 }}
-                  className="flex items-start gap-3 bg-white/50 p-3 rounded-lg"
-                >
-                  <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-text-primary">{translateIndicator(factor)}</span>
-                </motion.div>
-              ))}
+              {state.combined_explanation.primary_factors.map((factor, index) => {
+                const translatedFactor = translateIndicator(factor);
+                console.log('Eye tracking key:', factor);
+                console.log('Translated text:', translatedFactor);
+                console.log('Current language:', i18n.language);
+
+                return (
+                  <motion.div
+                    key={index}
+                    initial={{ x: -10, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.5 + index * 0.1 }}
+                    className="flex items-start gap-3 bg-white/50 p-3 rounded-lg"
+                  >
+                    <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-text-primary">{translatedFactor}</span>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
 
