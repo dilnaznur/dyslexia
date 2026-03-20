@@ -46,19 +46,15 @@ class PredictionRequest(BaseModel):
 
 
 class FeatureImportance(BaseModel):
-    """Feature importance scores for explainability."""
-    num_fixations: float
-    mean_fixation_duration: float
-    median_fixation_duration: float
-    total_reading_time: float
-    mean_fixation_x: float
-    std_fixation_y: float
-    entropy_fixation_duration: float
-    autocorrelation: float
-    cv_inter_fixation_intervals: float
-    meta_variability: float
-    tvi_score: float
-    weighted_tvi_score: float
+    """Key eye-tracking metrics for explainability."""
+    fix_count: float
+    fix_dur_mean: float
+    fix_dur_std: float
+    fix_x_mean: float
+    fix_y_std: float
+    raw_vel_mean: float
+    raw_regressions: float
+    raw_path_length: float
 
 
 class Explanation(BaseModel):
@@ -89,9 +85,14 @@ class PredictionResponse(BaseModel):
                         "Irregular saccade patterns"
                     ],
                     "feature_importance": {
-                        "mean_fixation_duration": 0.28,
-                        "entropy_fixation_duration": 0.22,
-                        "autocorrelation": 0.18
+                        "fix_count": 42.0,
+                        "fix_dur_mean": 245.0,
+                        "fix_dur_std": 80.0,
+                        "fix_x_mean": 512.0,
+                        "fix_y_std": 30.0,
+                        "raw_vel_mean": 95.0,
+                        "raw_regressions": 5.0,
+                        "raw_path_length": 18000.0
                     },
                     "recommendation": "Recommend comprehensive assessment by educational psychologist"
                 },

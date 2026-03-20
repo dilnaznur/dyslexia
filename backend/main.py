@@ -28,7 +28,8 @@ from schemas import (
     PredictionResponse,
     FeedbackRequest,
     HealthResponse,
-    Explanation
+    Explanation,
+    FeatureImportance
 )
 from ml_pipeline import DyslexiaPredictor
 from pathlib import Path
@@ -71,13 +72,11 @@ app.add_middleware(
 
 # Model file paths
 MODEL_DIR = Path(__file__).parent / "models"
-MODEL_PATH = MODEL_DIR / "optimal_tvi_model.pkl"
-SCALER_PATH = MODEL_DIR / "scaler.pkl"
+ETDD70_MODEL_PATH = MODEL_DIR / "etdd70_model.pkl"
 
 # Initialize ML predictor with real model files (if available)
 predictor = DyslexiaPredictor(
-    model_path=str(MODEL_PATH) if MODEL_PATH.exists() else None,
-    scaler_path=str(SCALER_PATH) if SCALER_PATH.exists() else None
+    model_path=str(ETDD70_MODEL_PATH) if ETDD70_MODEL_PATH.exists() else None
 )
 
 # In-memory storage for feedback (in production, use database)
@@ -110,16 +109,18 @@ async def startup_event():
     logger.info("=" * 60)
     logger.info("MindStep API - Dyslexia Detection Platform")
     logger.info("=" * 60)
+    logger.info(f"Looking for model at: {ETDD70_MODEL_PATH}")
+    logger.info(f"File exists: {ETDD70_MODEL_PATH.exists()}")
 
-    if predictor.model is not None:
+    if predictor.model_loaded:
         logger.info("🚀 Server started with REAL ML model")
-        logger.info("   Model: Random Forest (85.71% accuracy, 94.1% @ high confidence)")
+        logger.info("Model: Ensemble CatBoost+XGB+LightGBM")
+        logger.info("Accuracy: 92.86%  |  AUC: 0.9796")
         logger.info(f"   Version: {predictor.model_version}")
     else:
         logger.warning("🚀 Server started in MOCK mode")
-        logger.warning("   Place model files in backend/models/ for real predictions:")
-        logger.warning(f"   - {MODEL_PATH}")
-        logger.warning(f"   - {SCALER_PATH}")
+        logger.warning("   Place model file in backend/models/ for real predictions:")
+        logger.warning(f"   - {ETDD70_MODEL_PATH}")
 
     logger.info("=" * 60)
 
@@ -133,7 +134,7 @@ async def health_check():
     try:
         return HealthResponse(
             status="healthy",
-            model_loaded=(predictor.model is not None),
+            model_loaded=predictor.model_loaded,
             version=predictor.model_version
         )
     except Exception as e:
@@ -176,15 +177,9 @@ async def predict_dyslexia_risk(request: PredictionRequest):
                 detail="Insufficient gaze data. Minimum 10 points required."
             )
 
-        # Make prediction
-        probability_dyslexic, confidence, features = predictor.predict(
-            request.reading_data
-        )
+        probability, confidence, feature_dict = predictor.predict(request.reading_data)
+        risk_score = probability * 100
 
-        # Convert probability to risk score (0-100)
-        risk_score = probability_dyslexic * 100
-
-        # Classify risk level
         if risk_score < 40:
             classification = "Low Risk"
         elif risk_score < 70:
@@ -192,17 +187,20 @@ async def predict_dyslexia_risk(request: PredictionRequest):
         else:
             classification = "High Risk"
 
-        # Generate explanation
         primary_indicators, recommendation = predictor.generate_explanation(
-            features, probability_dyslexic
+            feature_dict, probability)
+
+        feature_importance = FeatureImportance(
+            fix_count=feature_dict.get("fix_count", 0.0),
+            fix_dur_mean=feature_dict.get("fix_dur_mean", 0.0),
+            fix_dur_std=feature_dict.get("fix_dur_std", 0.0),
+            fix_x_mean=feature_dict.get("fix_x_mean", 0.0),
+            fix_y_std=feature_dict.get("fix_y_std", 0.0),
+            raw_vel_mean=feature_dict.get("raw_vel_mean", 0.0),
+            raw_regressions=feature_dict.get("raw_regressions", 0.0),
+            raw_path_length=feature_dict.get("raw_path_length", 0.0),
         )
 
-        # Get feature importance for explainability
-        feature_importance = predictor.feature_engineer.get_feature_importance_dict(
-            features
-        )
-
-        # Build response
         response = PredictionResponse(
             risk_score=round(risk_score, 2),
             confidence=round(confidence, 3),
@@ -210,17 +208,17 @@ async def predict_dyslexia_risk(request: PredictionRequest):
             explanation=Explanation(
                 primary_indicators=primary_indicators,
                 feature_importance=feature_importance,
-                recommendation=recommendation
+                recommendation=recommendation,
             ),
-            model_version=predictor.model_version
+            model_version=predictor.model_version,
         )
+
+        return response
 
         logger.info(
             f"Prediction completed: risk={risk_score:.1f}%, "
             f"confidence={confidence:.2f}, class={classification}"
         )
-
-        return response
 
     except HTTPException:
         raise

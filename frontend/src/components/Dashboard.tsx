@@ -457,33 +457,30 @@ export default function Dashboard() {
     ? [
         {
           name: t('dashboard.featureNames.fixationDuration'),
-          value: parseFloat(
-            (state.backend_prediction.explanation.feature_importance
-              .mean_fixation_duration / 500).toFixed(2)
-          ),
+          value: (() => {
+            const v = parseFloat(
+              ((state.backend_prediction.explanation.feature_importance?.fix_dur_mean ?? 0) / 50).toFixed(2)
+            );
+            return isNaN(v) ? 0 : Math.min(v, 1.0);
+          })(),
         },
         {
-          name: t('dashboard.featureNames.entropy'),
-          value: parseFloat(
-            (state.backend_prediction.explanation.feature_importance
-              .entropy_fixation_duration / 3).toFixed(2)
-          ),
+          name: t('dashboard.featureNames.velocity'),
+          value: (() => {
+            const v = parseFloat(
+              ((state.backend_prediction.explanation.feature_importance?.raw_vel_mean ?? 0) / 20).toFixed(2)
+            );
+            return isNaN(v) ? 0 : Math.min(v, 1.0);
+          })(),
         },
         {
-          name: t('dashboard.featureNames.autocorrelation'),
-          value: Math.abs(
-            parseFloat(
-              (state.backend_prediction.explanation.feature_importance
-                .autocorrelation * 2).toFixed(2)
-            )
-          ),
-        },
-        {
-          name: t('dashboard.featureNames.tviScore'),
-          value: parseFloat(
-            (state.backend_prediction.explanation.feature_importance
-              .weighted_tvi_score / 15).toFixed(2)
-          ),
+          name: t('dashboard.featureNames.regressions'),
+          value: (() => {
+            const v = parseFloat(
+              ((state.backend_prediction.explanation.feature_importance?.raw_regressions ?? 0) / 5).toFixed(2)
+            );
+            return isNaN(v) ? 0 : Math.min(v, 1.0);
+          })(),
         },
       ]
     : [];

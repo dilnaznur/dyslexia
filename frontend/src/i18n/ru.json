@@ -190,10 +190,9 @@
       "attention": "Внимание"
     },
     "featureNames": {
-      "fixationDuration": "Длит. фиксации",
-      "entropy": "Энтропия",
-      "autocorrelation": "Автокорреляция",
-      "tviScore": "Балл TVI"
+      "fixationDuration": "Длительность фиксации",
+      "velocity": "Скорость взгляда",
+      "regressions": "Регрессии"
     }
   },
   "charts": {

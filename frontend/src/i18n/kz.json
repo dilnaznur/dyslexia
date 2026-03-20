@@ -191,9 +191,8 @@
     },
     "featureNames": {
       "fixationDuration": "Фиксация ұзақтығы",
-      "entropy": "Энтропия",
-      "autocorrelation": "Автокорреляция",
-      "tviScore": "TVI балы"
+      "velocity": "Көз жылдамдығы",
+      "regressions": "Регрессиялар"
     }
   },
   "charts": {

@@ -162,18 +162,14 @@ export interface PredictionRequest {
 }
 
 export interface FeatureImportance {
-  num_fixations: number;
-  mean_fixation_duration: number;
-  median_fixation_duration: number;
-  total_reading_time: number;
-  mean_fixation_x: number;
-  std_fixation_y: number;
-  entropy_fixation_duration: number;
-  autocorrelation: number;
-  cv_inter_fixation_intervals: number;
-  meta_variability: number;
-  tvi_score: number;
-  weighted_tvi_score: number;
+  fix_count: number;
+  fix_dur_mean: number;
+  fix_dur_std: number;
+  fix_x_mean: number;
+  fix_y_std: number;
+  raw_vel_mean: number;
+  raw_regressions: number;
+  raw_path_length: number;
 }
 
 export interface Explanation {

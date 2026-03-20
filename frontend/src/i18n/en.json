@@ -190,10 +190,9 @@
       "attention": "Attention"
     },
     "featureNames": {
-      "fixationDuration": "Fixation Duration",
-      "entropy": "Entropy",
-      "autocorrelation": "Autocorrelation",
-      "tviScore": "TVI Score"
+      "fixationDuration": "Fixation duration",
+      "velocity": "Eye velocity",
+      "regressions": "Regressions"
     }
   },
   "charts": {
