@@ -53,6 +53,68 @@ export interface WritingAnalysis {
   avg_stroke_speed: number;
   pressure_variance: number;
   image_data: string; // Base64
+  gemini_structured?: HandwritingGeminiStructuredResult;
+  handwriting_pipeline?: HandwritingPipelineResult;
+}
+
+export type ChildAge = 5 | 6 | 7 | 8 | 9 | 10;
+
+export interface HandwritingGeminiStructuredResult {
+  mirror_writing: {
+    detected: boolean;
+    reversed_letters: string[];
+    reversal_count: number;
+    total_letters: number;
+    reversal_rate: number;
+    score: number;
+  };
+  spatial_irregularities: {
+    spacing_cv: number;
+    baseline_adherence: number;
+    size_variability: number;
+    score: number;
+  };
+  formation_difficulties: {
+    tremor_detected: boolean;
+    tremor_severity: number;
+    unclosed_letters: string[];
+    closure_issues_count: number;
+    score: number;
+  };
+  letter_orientation: {
+    slant_variance_degrees: number;
+    rotation_errors: number;
+    score: number;
+  };
+  overall_risk_score: number;
+  confidence: number;
+  clinical_notes: string;
+}
+
+export interface HandwritingPipelineResult {
+  gemini_raw_score: number;
+  age_calibrated_score: number;
+  clinical_flags: string[];
+  cv_agreement: number;
+  final_score: number;
+  checks_passed: number;
+  cv_confirmed: boolean;
+  category_scores: {
+    mirror_writing: number;
+    spatial: number;
+    formation: number;
+    orientation: number;
+  };
+  pipeline_breakdown: {
+    stage1_age_adjustment: {
+      spacing: number;
+      formation: number;
+      orientation: number;
+    };
+    stage2_threshold_checks: number;
+    stage3_cv_validation: boolean;
+    stage4_weights_applied: boolean;
+  };
 }
 
 export interface GeminiWritingResult {
@@ -136,6 +198,7 @@ export type AssessmentStatus = 'idle' | 'collecting' | 'analyzing' | 'complete' 
 
 export interface DiagnosisState {
   // Assessment data
+  child_age: ChildAge | null;
   reading_data: ReadingMetrics | null;
   writing_data: WritingAnalysis | null;
   chatbot_data: ChatbotAnalysis | null;

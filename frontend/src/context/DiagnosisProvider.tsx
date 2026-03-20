@@ -5,6 +5,7 @@
 import { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import {
   DiagnosisState,
+  ChildAge,
   ReadingMetrics,
   WritingAnalysis,
   ChatbotAnalysis,
@@ -20,6 +21,7 @@ import { predictDyslexiaRisk } from '@/lib/api';
 
 interface DiagnosisContextType {
   state: DiagnosisState;
+  setChildAge: (age: ChildAge) => void;
   setReadingData: (data: ReadingMetrics) => void;
   setWritingData: (data: WritingAnalysis) => void;
   setChatbotData: (data: ChatbotAnalysis) => void;
@@ -37,6 +39,7 @@ const DiagnosisContext = createContext<DiagnosisContextType | undefined>(
 // ============================================================================
 
 type DiagnosisAction =
+  | { type: 'SET_CHILD_AGE'; payload: ChildAge }
   | { type: 'SET_READING_DATA'; payload: ReadingMetrics }
   | { type: 'SET_WRITING_DATA'; payload: WritingAnalysis }
   | { type: 'SET_CHATBOT_DATA'; payload: ChatbotAnalysis }
@@ -48,6 +51,7 @@ type DiagnosisAction =
   | { type: 'RESET' };
 
 const initialState: DiagnosisState = {
+  child_age: null,
   reading_data: null,
   writing_data: null,
   chatbot_data: null,
@@ -69,6 +73,12 @@ function diagnosisReducer(
   action: DiagnosisAction
 ): DiagnosisState {
   switch (action.type) {
+    case 'SET_CHILD_AGE':
+      return {
+        ...state,
+        child_age: action.payload,
+      };
+
     case 'SET_READING_DATA':
       return {
         ...state,
@@ -146,6 +156,10 @@ interface DiagnosisProviderProps {
 export function DiagnosisProvider({ children }: DiagnosisProviderProps) {
   const [state, dispatch] = useReducer(diagnosisReducer, initialState);
 
+  const setChildAge = (age: ChildAge) => {
+    dispatch({ type: 'SET_CHILD_AGE', payload: age });
+  };
+
   const setReadingData = (data: ReadingMetrics) => {
     dispatch({ type: 'SET_READING_DATA', payload: data });
   };
@@ -209,8 +223,9 @@ export function DiagnosisProvider({ children }: DiagnosisProviderProps) {
       };
 
       // Convert writing risk to numeric (0-100)
-      // Since gemini_response is a string (not structured object), use default low-moderate risk
-      const writingRiskNumeric = writing_data ? 30 : 50;
+      const writingRiskNumeric = writing_data?.handwriting_pipeline?.final_score
+        ?? writing_data?.gemini_structured?.overall_risk_score
+        ?? (writing_data ? 30 : 50);
 
       // Convert chatbot risk to numeric (0-100)
       const chatbotRiskMap: { [key: string]: number } = { Low: 20, Moderate: 50, High: 80 };
@@ -290,6 +305,7 @@ export function DiagnosisProvider({ children }: DiagnosisProviderProps) {
 
   const value: DiagnosisContextType = {
     state,
+    setChildAge,
     setReadingData,
     setWritingData,
     setChatbotData,
@@ -370,7 +386,27 @@ function generateCombinedExplanation(
   }
 
   // Writing indicators
-  // Since gemini_response is a string (not structured object), extract simple indicator
+  const writingFlagMap: Record<string, string> = {
+    HIGH_REVERSAL_FREQUENCY: 'results.handwriting.description',
+    IRREGULAR_SPACING: 'results.indicators.handwriting.spacing',
+    MOTOR_CONTROL_CONCERN: 'results.indicators.handwriting.tremor',
+    ORIENTATION_INCONSISTENT: 'results.indicators.handwriting.spacing',
+  };
+
+  if (writingData?.handwriting_pipeline?.clinical_flags?.length) {
+    for (const flag of writingData.handwriting_pipeline.clinical_flags) {
+      const indicator = writingFlagMap[flag];
+      if (indicator) {
+        writingIndicators.push(indicator);
+      }
+    }
+
+    if (writingData.handwriting_pipeline.final_score >= 45) {
+      primaryFactors.push('results.handwriting.description');
+    }
+  }
+
+  // Backward compatibility for string response extraction
   if (writingData && writingData.gemini_response) {
     const response = writingData.gemini_response.toLowerCase();
     
@@ -390,10 +426,11 @@ function generateCombinedExplanation(
       writingIndicators.push(indicator);
     }
     
-    // If no specific issues found, add general indicator
-    if (writingIndicators.length === 0) {
-      writingIndicators.push('results.indicators.handwriting.noConcerns');
-    }
+  }
+
+  // If no specific issues found, add general indicator
+  if (writingData && writingIndicators.length === 0) {
+    writingIndicators.push('results.indicators.handwriting.noConcerns');
   }
 
   // Behavioral indicators

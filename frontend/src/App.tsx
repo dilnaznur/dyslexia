@@ -15,7 +15,7 @@ import AIChatbot from '@/components/AIChatbot';
 import Dashboard from '@/components/Dashboard';
 import ExerciseHub from '@/components/exercises/ExerciseHub';
 import LanguageSelector from '@/components/LanguageSelector';
-import { ReadingMetrics, WritingAnalysis, ChatbotAnalysis } from '@/types';
+import { ReadingMetrics, WritingAnalysis, ChatbotAnalysis, ChildAge } from '@/types';
 
 type AssessmentStep = 'welcome' | 'reading' | 'writing' | 'chatbot' | 'processing' | 'dashboard';
 
@@ -24,12 +24,14 @@ function AppContent() {
   const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState<AssessmentStep>('welcome');
   const {
+    setChildAge,
     setReadingData,
     setWritingData,
     setChatbotData,
     processBackendPrediction,
     calculateFinalScore,
   } = useDiagnosis();
+  const [selectedAge, setSelectedAge] = useState<number | ''>('');
 
   // Handle reading assessment completion
   const handleReadingComplete = async (metrics: ReadingMetrics) => {
@@ -209,6 +211,39 @@ function AppContent() {
                 <h2 className="text-2xl font-bold text-text-primary mb-4">
                   {t('app.whatToExpect')}
                 </h2>
+
+                <div className="mb-6 rounded-xl bg-white/70 p-4 border border-white/60">
+                  <h3 className="text-xl font-bold text-text-primary mb-2">Let's get started!</h3>
+                  <p className="text-text-secondary mb-3">How old is the child taking this test?</p>
+                  <label htmlFor="child-age" className="block text-sm font-semibold text-text-primary mb-2">
+                    Child's Age
+                  </label>
+                  <select
+                    id="child-age"
+                    value={selectedAge}
+                    onChange={(e) => {
+                      const parsed = Number(e.target.value);
+                      if (!parsed) {
+                        setSelectedAge('');
+                        return;
+                      }
+                      setSelectedAge(parsed);
+                    }}
+                    className="w-full rounded-lg border-2 border-indigo-200 bg-white px-3 py-2 text-text-primary focus:border-indigo-400 focus:outline-none"
+                  >
+                    <option value="">Select age...</option>
+                    <option value="5">5 years old</option>
+                    <option value="6">6 years old</option>
+                    <option value="7">7 years old</option>
+                    <option value="8">8 years old</option>
+                    <option value="9">9 years old</option>
+                    <option value="10">10 years old</option>
+                  </select>
+                  {selectedAge !== '' && (selectedAge < 5 || selectedAge > 10) && (
+                    <p className="mt-2 text-sm font-semibold text-red-600">Age must be between 5 and 10.</p>
+                  )}
+                </div>
+
                 <div className="space-y-4">
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 bg-soft-blue rounded-full flex items-center justify-center flex-shrink-0">
@@ -278,8 +313,17 @@ function AppContent() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => setCurrentStep('reading')}
-                  className="bg-white hover:bg-gray-100 text-text-primary font-bold text-xl py-4 px-12 rounded-full shadow-lg transition-all"
+                  onClick={() => {
+                    if (selectedAge === '' || selectedAge < 5 || selectedAge > 10) {
+                      alert('Please select a valid age between 5 and 10.');
+                      return;
+                    }
+
+                    setChildAge(selectedAge as ChildAge);
+                    setCurrentStep('reading');
+                  }}
+                  className="bg-white hover:bg-gray-100 disabled:bg-gray-200 disabled:text-gray-500 text-text-primary font-bold text-xl py-4 px-12 rounded-full shadow-lg transition-all"
+                  disabled={selectedAge === '' || selectedAge < 5 || selectedAge > 10}
                 >
                   {t('app.beginAssessment')}
                 </motion.button>

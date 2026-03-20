@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Pencil, Undo, Trash2, Send, Loader } from 'lucide-react';
 import { analyzeHandwriting } from '@/lib/gemini';
 import { WritingAnalysis, Stroke } from '@/types';
+import { useDiagnosis } from '@/context/DiagnosisProvider';
 import InstructionModal from './InstructionModal';
 import { useTranslation } from 'react-i18next';
 
@@ -26,6 +27,7 @@ export default function WritingAssessment({
   onSkip,
 }: WritingAssessmentProps) {
   const { t } = useTranslation();
+  const { state } = useDiagnosis();
   const prompts: string[] = t('writing.prompts', { returnObjects: true }) as unknown as string[];
 
   const [phase, setPhase] = useState<'intro' | 'drawing' | 'analyzing' | 'complete'>('intro');
@@ -188,8 +190,9 @@ export default function WritingAssessment({
 
       const imageData = canvas.toDataURL('image/png');
 
-      // Analyze with Gemini Vision
-      const geminiResult = await analyzeHandwriting(imageData);
+      // Analyze with engineered Gemini Vision pipeline
+      const ageForAnalysis = state.child_age ?? 8;
+      const geminiResult = await analyzeHandwriting(imageData, ageForAnalysis);
 
       // Calculate stroke metrics
       const avgStrokeSpeed = strokes.reduce((sum, stroke) => {
@@ -202,11 +205,13 @@ export default function WritingAssessment({
       const pressureVariance = calculatePressureVariance(strokes);
 
       const analysis: WritingAnalysis = {
-        gemini_response: geminiResult,
+        gemini_response: geminiResult.rawText,
         stroke_count: strokes.length,
         avg_stroke_speed: avgStrokeSpeed,
         pressure_variance: pressureVariance,
         image_data: imageData,
+        gemini_structured: geminiResult.structured,
+        handwriting_pipeline: geminiResult.pipeline,
       };
 
       setPhase('complete');

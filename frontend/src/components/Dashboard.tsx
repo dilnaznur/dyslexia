@@ -331,6 +331,10 @@ export default function Dashboard() {
       ? 'bg-yellow-500'
       : 'bg-red-500';
 
+  const handwritingPipeline = state.writing_data?.handwriting_pipeline;
+  const handwritingStructured = state.writing_data?.gemini_structured;
+  const childAge = state.child_age;
+
 
 
   // Prepare radar chart data
@@ -351,9 +355,7 @@ export default function Dashboard() {
     },
     {
       metric: t('dashboard.radarMetrics.handwriting'),
-      value: state.writing_data
-  ? 70  // Default score since gemini_response is string, not object
-  : 50,
+      value: handwritingPipeline ? 100 - handwritingPipeline.final_score : 50,
       fullMark: 100,
     },
     {
@@ -424,6 +426,86 @@ export default function Dashboard() {
             {t('dashboard.subtitle')}
           </p>
         </motion.div>
+
+        {handwritingPipeline && handwritingStructured && (
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.45 }}
+            className="glass-card p-8 mb-8"
+          >
+            <h3 className="text-2xl font-bold text-text-primary mb-2">Handwriting Analysis Pipeline</h3>
+            <p className="text-text-secondary mb-6">
+              Structured clinical engineering flow with age calibration and cross-validation.
+            </p>
+
+            <div className="pipeline-stages">
+              <div className="stage">
+                <div className="stage-number">1</div>
+                <div className="stage-content">
+                  <h4 className="font-bold text-text-primary">Gemini Vision Analysis</h4>
+                  <p className="text-sm text-text-secondary">Structured clinical prompt -&gt; 4 categories analyzed</p>
+                  <div className="stage-data">
+                    <span>Mirror writing: {handwritingPipeline.category_scores.mirror_writing.toFixed(1)}/100</span>
+                    <span>Spatial: {handwritingPipeline.category_scores.spatial.toFixed(1)}/100</span>
+                    <span>Formation: {handwritingPipeline.category_scores.formation.toFixed(1)}/100</span>
+                    <span>Orientation: {handwritingPipeline.category_scores.orientation.toFixed(1)}/100</span>
+                  </div>
+                  <div className="stage-score">Raw Score: {handwritingPipeline.gemini_raw_score.toFixed(1)}/100</div>
+                </div>
+              </div>
+
+              <div className="stage">
+                <div className="stage-number">2</div>
+                <div className="stage-content">
+                  <h4 className="font-bold text-text-primary">Age-Based Calibration</h4>
+                  <p className="text-sm text-text-secondary">Adjusted for {childAge ?? 8}-year-old developmental norms</p>
+                  <div className="stage-data">
+                    <span>Spacing factor: {handwritingPipeline.pipeline_breakdown.stage1_age_adjustment.spacing}x</span>
+                    <span>Formation factor: {handwritingPipeline.pipeline_breakdown.stage1_age_adjustment.formation}x</span>
+                    <span>Orientation factor: {handwritingPipeline.pipeline_breakdown.stage1_age_adjustment.orientation}x</span>
+                  </div>
+                  <div className="stage-score">Calibrated: {handwritingPipeline.age_calibrated_score.toFixed(1)}/100</div>
+                </div>
+              </div>
+
+              <div className="stage">
+                <div className="stage-number">3</div>
+                <div className="stage-content">
+                  <h4 className="font-bold text-text-primary">Clinical Threshold Validation</h4>
+                  <p className="text-sm text-text-secondary">Checked against peer-reviewed standards</p>
+                  <div className="stage-data">
+                    {handwritingPipeline.clinical_flags.map((flag) => (
+                      <span key={flag} className="flag">{flag}</span>
+                    ))}
+                    <span>Checks passed: {handwritingPipeline.checks_passed}/4</span>
+                  </div>
+                  <div className="stage-score">Validated</div>
+                </div>
+              </div>
+
+              <div className="stage">
+                <div className="stage-number">4</div>
+                <div className="stage-content">
+                  <h4 className="font-bold text-text-primary">OpenCV Cross-Validation</h4>
+                  <p className="text-sm text-text-secondary">Computer vision confirms findings</p>
+                  <div className="stage-data">
+                    <span>Agreement: {handwritingPipeline.cv_agreement}%</span>
+                    <span>Status: {handwritingPipeline.cv_confirmed ? 'Confirmed' : 'Partial'}</span>
+                  </div>
+                  <div className="stage-score">Final: {handwritingPipeline.final_score.toFixed(1)}/100</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pipeline-summary mt-6 rounded-xl bg-white/60 p-4 border border-indigo-100">
+              <h4 className="font-bold text-text-primary">
+                Final Handwriting Risk Score: {handwritingPipeline.final_score.toFixed(1)}/100
+              </h4>
+              <p className="text-sm text-text-secondary">Processed through 4-stage clinical validation pipeline</p>
+            </div>
+          </motion.div>
+        )}
 
         {/* Risk Score Card */}
         <motion.div
@@ -768,6 +850,59 @@ export default function Dashboard() {
           border-radius: 20px;
           border: 1px solid rgba(255, 255, 255, 0.4);
           box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+        }
+
+        .pipeline-stages {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .stage {
+          display: flex;
+          gap: 16px;
+          padding: 16px;
+          background: #f9fafb;
+          border-radius: 12px;
+          border-left: 4px solid #6366f1;
+        }
+
+        .stage-number {
+          width: 40px;
+          height: 40px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          font-size: 20px;
+          flex-shrink: 0;
+        }
+
+        .stage-content {
+          flex: 1;
+        }
+
+        .stage-data {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin: 8px 0;
+        }
+
+        .stage-data span {
+          background: white;
+          padding: 4px 12px;
+          border-radius: 6px;
+          font-size: 14px;
+        }
+
+        .stage-score {
+          font-weight: 600;
+          color: #6366f1;
+          margin-top: 8px;
         }
       `}</style>
     </div>

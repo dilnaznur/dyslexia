@@ -90,7 +90,7 @@
     "memoryWords": ["бала", "доп", "ағаш"],
     "correctRhyme": "қала",
     "correctColor": "көк",
-    "correctStoryAnswers": ["макс", "ит"],
+    "correctStoryAnswers": ["оспан", "ит"],
     "options": {
       "q2": [
         { "emoji": "🏙️", "label": "қала", "value": "қала" },
