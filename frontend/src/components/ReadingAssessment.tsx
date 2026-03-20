@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Eye, CheckCircle, AlertCircle } from 'lucide-react';
 import InstructionModal from './InstructionModal';
 import { useTranslation } from 'react-i18next';
+import { LAYOUT_CONSTANTS } from '@/constants/layout';
 
 // Type definitions
 interface GazePoint {
@@ -42,13 +43,35 @@ interface ReadingAssessmentProps {
 // Constants
 const READING_TEXT = `Once upon a time, there was a clever fox who lived in a beautiful forest. The fox loved to explore and find new adventures every day. One sunny morning, the fox discovered a sparkling stream with crystal clear water. Many colorful fish swam happily in the stream. The fox made friends with a wise old owl who lived in a tall oak tree. Together, they explored the magical forest and helped other animals. They found hidden treasures and solved interesting puzzles. The fox learned that friendship and kindness are the most valuable treasures of all.`;
 
-const CALIBRATION_POINTS = [
-  { x: 10, y: 10 },
-  { x: 90, y: 10 },
-  { x: 50, y: 50 },
-  { x: 10, y: 90 },
-  { x: 90, y: 90 },
+const CALIBRATION_POINT_RATIO = [
+  { x: 0.1, y: 0.1 },
+  { x: 0.9, y: 0.1 },
+  { x: 0.5, y: 0.4 },
+  { x: 0.1, y: 0.8 },
+  { x: 0.9, y: 0.8 },
 ];
+
+function getHeaderHeight(): number {
+  return (
+    document.querySelector<HTMLElement>('.header-progress')?.offsetHeight ||
+    LAYOUT_CONSTANTS.HEADER_HEIGHT
+  );
+}
+
+function buildCalibrationPoints(
+  viewportWidth: number,
+  viewportHeight: number,
+  headerHeight: number
+): { x: number; y: number }[] {
+  const safeTop = headerHeight + LAYOUT_CONSTANTS.SAFE_MARGIN;
+  const safeBottom = LAYOUT_CONSTANTS.SAFE_MARGIN;
+  const usableHeight = Math.max(viewportHeight - safeTop - safeBottom, 200);
+
+  return CALIBRATION_POINT_RATIO.map((point) => ({
+    x: viewportWidth * point.x,
+    y: usableHeight * point.y,
+  }));
+}
 
 const GAZE_BUFFER_SIZE = 5;
 
@@ -377,9 +400,11 @@ export default function ReadingAssessment({
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
-  const [fixedCalibrationPoint, setFixedCalibrationPoint] = useState<{ x: number; y: number } | null>(
-    CALIBRATION_POINTS[0]
+  const [headerOffsetTop, setHeaderOffsetTop] = useState(
+    LAYOUT_CONSTANTS.HEADER_HEIGHT + LAYOUT_CONSTANTS.SAFE_MARGIN
   );
+  const [calibrationPoints, setCalibrationPoints] = useState<{ x: number; y: number }[]>([]);
+  const [fixedCalibrationPoint, setFixedCalibrationPoint] = useState<{ x: number; y: number } | null>(null);
   
   const gazePointsRef = useRef<GazePoint[]>([]);
   const startTimeRef = useRef<number>(0);
@@ -405,6 +430,33 @@ export default function ReadingAssessment({
       return () => clearInterval(interval);
     }
   }, [phase]);
+
+  useEffect(() => {
+    if (phase !== 'calibration') {
+      return;
+    }
+
+    const updateCalibrationLayout = () => {
+      const headerHeight = getHeaderHeight();
+      const topOffset = headerHeight + LAYOUT_CONSTANTS.SAFE_MARGIN;
+      setHeaderOffsetTop(topOffset);
+      setCalibrationPoints(
+        buildCalibrationPoints(window.innerWidth, window.innerHeight, headerHeight)
+      );
+    };
+
+    updateCalibrationLayout();
+    window.addEventListener('resize', updateCalibrationLayout);
+    return () => window.removeEventListener('resize', updateCalibrationLayout);
+  }, [phase]);
+
+  useEffect(() => {
+    if (calibrationPoints.length === 0) {
+      setFixedCalibrationPoint(null);
+      return;
+    }
+    setFixedCalibrationPoint(calibrationPoints[calibrationIndex] || calibrationPoints[0]);
+  }, [calibrationIndex, calibrationPoints]);
 
   const handleStart = async () => {
     if (isInitializing.current || isWebGazerInitialized.current || isStarting) {
@@ -435,15 +487,19 @@ export default function ReadingAssessment({
   };
 
   const handleCalibrationClick = async () => {
+    if (calibrationPoints.length === 0) {
+      return;
+    }
+
     console.log(`📍 Calibration point ${calibrationIndex + 1} clicked`);
     
     // Give WebGazer time to register the click
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    if (calibrationIndex < CALIBRATION_POINTS.length - 1) {
+    if (calibrationIndex < calibrationPoints.length - 1) {
       setCalibrationIndex(prev => {
         const next = prev + 1;
-        setFixedCalibrationPoint(CALIBRATION_POINTS[next]);
+        setFixedCalibrationPoint(calibrationPoints[next] || null);
         return next;
       });
     } else {
@@ -597,7 +653,7 @@ export default function ReadingAssessment({
   const currentCalibrationPoint = fixedCalibrationPoint;
 
       return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-100 to-green-100 p-8 pt-24">
+        <div className="module-container min-h-screen bg-gradient-to-br from-blue-100 to-green-100 p-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -629,15 +685,20 @@ export default function ReadingAssessment({
               className="fixed inset-0 z-40"
               style={{ 
                 display: phase === 'calibration' ? 'block' : 'none',
-                pointerEvents: phase === 'calibration' ? 'auto' : 'none'
+                pointerEvents: phase === 'calibration' ? 'auto' : 'none',
+                top: `${headerOffsetTop}px`,
+                bottom: `${LAYOUT_CONSTANTS.SAFE_MARGIN}px`,
               }}
             >
-              <div className="text-center mb-8 absolute top-8 left-0 right-0">
+              <div className="text-center mb-8 absolute top-2 left-0 right-0">
                 <p className="text-xl text-gray-800 font-bold">
                   {t('reading.calibrationTitle')}
                 </p>
                 <p className="text-gray-600">
-                  {t('reading.calibrationPoint', { current: calibrationIndex + 1, total: CALIBRATION_POINTS.length })}
+                  {t('reading.calibrationPoint', {
+                    current: calibrationIndex + 1,
+                    total: calibrationPoints.length || CALIBRATION_POINT_RATIO.length,
+                  })}
                 </p>
               </div>
               {currentCalibrationPoint && (
@@ -648,8 +709,8 @@ export default function ReadingAssessment({
                   onClick={handleCalibrationClick}
                   className="calibration-dot absolute cursor-pointer transition-colors shadow-lg flex items-center justify-center text-white font-bold"
                   style={{
-                    left: `${currentCalibrationPoint.x}%`,
-                    top: `${currentCalibrationPoint.y}%`,
+                    left: `${currentCalibrationPoint.x}px`,
+                    top: `${currentCalibrationPoint.y}px`,
                   }}
                 >
                   {calibrationIndex + 1}
@@ -725,6 +786,7 @@ export default function ReadingAssessment({
               border-radius: 50%;
               transform: translate(-50%, -50%);
               pointer-events: auto;
+              z-index: 150;
               animation: pulse 1s ease-in-out infinite;
             }
 

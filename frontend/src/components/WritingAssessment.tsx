@@ -251,7 +251,7 @@ export default function WritingAssessment({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-lavender to-peach p-8 pt-24">
+    <div className="module-container min-h-screen bg-gradient-to-br from-lavender to-peach p-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

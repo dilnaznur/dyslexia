@@ -68,6 +68,26 @@
   }
 }
 
+:root {
+  --app-header-height: 80px;
+  --app-safe-margin: 24px;
+  --app-content-top: calc(var(--app-header-height) + var(--app-safe-margin));
+}
+
+.header-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  min-height: var(--app-header-height);
+  z-index: 100;
+}
+
+.module-container {
+  min-height: calc(100vh - var(--app-header-height));
+  padding-top: var(--app-content-top);
+}
+
 /* ===== Modal overlay transitions (prevents black flash) ===== */
 .modal-overlay {
   position: fixed;

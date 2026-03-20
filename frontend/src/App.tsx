@@ -16,6 +16,7 @@ import Dashboard from '@/components/Dashboard';
 import ExerciseHub from '@/components/exercises/ExerciseHub';
 import LanguageSelector from '@/components/LanguageSelector';
 import { ReadingMetrics, WritingAnalysis, ChatbotAnalysis, ChildAge } from '@/types';
+import { LAYOUT_CONSTANTS } from '@/constants/layout';
 
 type AssessmentStep = 'welcome' | 'reading' | 'writing' | 'chatbot' | 'processing' | 'dashboard';
 
@@ -110,7 +111,7 @@ function AppContent() {
 
       {/* Progress Steps (hidden on welcome and dashboard) */}
       {currentStep !== 'welcome' && currentStep !== 'dashboard' && (
-        <div className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-sm shadow-md z-50">
+        <div className="header-progress bg-white/90 backdrop-blur-sm shadow-md">
           <div className="max-w-4xl mx-auto px-8 py-4">
             <div className="flex items-center justify-between">
               {steps.map((step, index) => {
@@ -395,6 +396,10 @@ function AppContent() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="min-h-screen bg-gradient-to-br from-mint to-soft-blue flex items-center justify-center"
+            style={{
+              paddingTop: LAYOUT_CONSTANTS.CONTENT_PADDING_TOP,
+              minHeight: `calc(100vh - ${LAYOUT_CONSTANTS.HEADER_HEIGHT}px)`,
+            }}
           >
             <div className="text-center">
               <motion.div

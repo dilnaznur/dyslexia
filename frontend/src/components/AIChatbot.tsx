@@ -597,7 +597,7 @@ export default function AIChatbot({ onComplete, onSkip }: AIChatbotProps) {
   // ============================================================================
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-pink-50 to-yellow-50 p-4 md:p-8 pt-24">
+    <div className="module-container min-h-screen bg-gradient-to-br from-indigo-100 via-pink-50 to-yellow-50 p-4 md:p-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
