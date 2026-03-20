@@ -459,7 +459,7 @@ export default function Dashboard() {
           name: t('dashboard.featureNames.fixationDuration'),
           value: (() => {
             const v = parseFloat(
-              ((state.backend_prediction.explanation.feature_importance?.fix_dur_mean ?? 0) / 50).toFixed(2)
+              ((state.backend_prediction.explanation.feature_importance?.fix_dur_mean ?? 0) / 300).toFixed(2)
             );
             return isNaN(v) ? 0 : Math.min(v, 1.0);
           })(),
@@ -468,7 +468,7 @@ export default function Dashboard() {
           name: t('dashboard.featureNames.velocity'),
           value: (() => {
             const v = parseFloat(
-              ((state.backend_prediction.explanation.feature_importance?.raw_vel_mean ?? 0) / 20).toFixed(2)
+              ((state.backend_prediction.explanation.feature_importance?.raw_vel_mean ?? 0) / 50).toFixed(2)
             );
             return isNaN(v) ? 0 : Math.min(v, 1.0);
           })(),
@@ -477,7 +477,7 @@ export default function Dashboard() {
           name: t('dashboard.featureNames.regressions'),
           value: (() => {
             const v = parseFloat(
-              ((state.backend_prediction.explanation.feature_importance?.raw_regressions ?? 0) / 5).toFixed(2)
+              ((state.backend_prediction.explanation.feature_importance?.raw_regressions ?? 0) / 150).toFixed(2)
             );
             return isNaN(v) ? 0 : Math.min(v, 1.0);
           })(),
