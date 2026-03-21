@@ -8,6 +8,8 @@ import { Eye, CheckCircle, AlertCircle } from 'lucide-react';
 import InstructionModal from './InstructionModal';
 import { useTranslation } from 'react-i18next';
 import { LAYOUT_CONSTANTS } from '@/constants/layout';
+import { getReadingText } from '@/data/readingTexts';
+import { useDiagnosis } from '@/context/DiagnosisProvider';
 
 // Type definitions
 interface GazePoint {
@@ -390,8 +392,13 @@ export default function ReadingAssessment({
   onComplete,
   onSkip,
 }: ReadingAssessmentProps) {
-  const { t } = useTranslation();
-  const readingText = t('reading.readingText');
+  const { t, i18n } = useTranslation();
+  const { state } = useDiagnosis();
+  const childAge = state.child_age ?? 7;
+  const currentLanguage = (i18n.language || 'en').split('-')[0].toLowerCase();
+  const selectedText = getReadingText(childAge, currentLanguage);
+  const readingTitle = selectedText?.title || t('reading.modalTitle');
+  const readingText = selectedText?.content || t('reading.readingText');
 
   const [phase, setPhase] = useState<
     'intro' | 'calibration' | 'reading' | 'complete'
@@ -737,10 +744,9 @@ export default function ReadingAssessment({
                   </div>
                 </div>
       
-                <div className="bg-white p-8 rounded-lg shadow-inner">
-                  <p className="text-xl leading-relaxed text-gray-800">
-                    {readingText}
-                  </p>
+                <div className="reading-content">
+                  <h3>{readingTitle}</h3>
+                  <p>{readingText}</p>
                 </div>
       
                 <button
@@ -798,6 +804,31 @@ export default function ReadingAssessment({
               right: -10px;
               bottom: -10px;
               border-radius: 50%;
+            }
+
+            .reading-content {
+              max-width: 700px;
+              margin: 40px auto;
+              padding: 30px;
+              background: white;
+              border-radius: 12px;
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            }
+
+            .reading-content h3 {
+              font-size: 24px;
+              font-weight: 700;
+              color: #1f2937;
+              margin-bottom: 20px;
+              text-align: center;
+            }
+
+            .reading-content p {
+              font-size: 18px;
+              line-height: 1.8;
+              color: #374151;
+              font-family: 'OpenDyslexic', Arial, sans-serif;
+              text-align: left;
             }
 
             @keyframes pulse {

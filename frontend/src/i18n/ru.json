@@ -262,7 +262,10 @@
       "irregularRhythm": "Обнаружен нерегулярный ритм чтения",
       "highVariability": "Высокая вариативность паттернов чтения (энтропия: {{entropy}})",
       "excessiveFixations": "Зафиксировано избыточное количество остановок ({{count}} фиксаций)",
-      "longDurations": "Отмечены длительные фиксации взгляда (сред.: {{duration}}мс)"
+      "longDurations": "Увеличена длительность фиксации (ср. {{duration}}мс)",
+      "backwardMovements": "Обнаружены обратные движения глаз ({{count}})",
+      "highVelocity": "Повышена скорость движения глаз ({{velocity}} пкс/выб)",
+      "highFixationCount": "Высокое количество фиксаций ({{count}})"
     },
     "handwriting": {
       "title": "Письмо",

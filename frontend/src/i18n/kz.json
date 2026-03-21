@@ -262,7 +262,10 @@
       "irregularRhythm": "Тұрақсыз оқу ритмі анықталды",
       "highVariability": "Оқу үлгілерінде жоғары ауытқу (энтропия: {{entropy}})",
       "excessiveFixations": "Артық фиксация саны байқалды ({{count}} фиксация)",
-      "longDurations": "Ұзақ фиксация ұзақтығы байқалды (орт.: {{duration}}мс)"
+      "longDurations": "Фиксация ұзақтығы жоғарылаған (орт. {{duration}}мс)",
+      "backwardMovements": "Кері көз қозғалыстары анықталды ({{count}})",
+      "highVelocity": "Көз қозғалысының жылдамдығы жоғары ({{velocity}} пкс)",
+      "highFixationCount": "Фиксация саны жоғары ({{count}})"
     },
     "handwriting": {
       "title": "Жазу",

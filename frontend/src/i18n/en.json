@@ -262,7 +262,10 @@
       "irregularRhythm": "Irregular temporal reading rhythm detected",
       "highVariability": "High variability in reading patterns (entropy: {{entropy}})",
       "excessiveFixations": "Excessive fixation count observed ({{count}} fixations)",
-      "longDurations": "Prolonged fixation durations noted (avg: {{duration}}ms)"
+      "longDurations": "Increased fixation duration (avg {{duration}}ms)",
+      "backwardMovements": "Backward eye movements detected ({{count}})",
+      "highVelocity": "Elevated eye movement velocity ({{velocity}} px/sample)",
+      "highFixationCount": "High fixation count ({{count}})"
     },
     "handwriting": {
       "title": "Writing",

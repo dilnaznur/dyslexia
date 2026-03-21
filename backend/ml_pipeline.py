@@ -191,16 +191,16 @@ class DyslexiaPredictor:
 
         if fix_dur > 50:
             indicators.append(
-                f"Increased fixation duration (avg {fix_dur:.0f}ms)")
+                f"results.eyeTracking.longDurations|duration={fix_dur:.0f}")
         if regressions > 3:
             indicators.append(
-                f"Backward eye movements detected ({regressions:.0f})")
+                f"results.eyeTracking.backwardMovements|count={regressions:.0f}")
         if vel_mean > 20:
             indicators.append(
-                f"Elevated eye movement velocity ({vel_mean:.1f} px/sample)")
+                f"results.eyeTracking.highVelocity|velocity={vel_mean:.1f}")
         if fix_count > 20:
             indicators.append(
-                f"High fixation count ({fix_count:.0f})")
+                f"results.eyeTracking.highFixationCount|count={fix_count:.0f}")
         if not indicators:
             indicators.append("Reading patterns within typical range")
 
