@@ -241,6 +241,11 @@
     "status": "Мәртебе",
     "confirmed": "Расталды",
     "partial": "Ішінара",
+    "highConfidence": "Жоғары сенімділік",
+    "lowConfidence": "Төмен сенімділік",
+    "spacingVariance": "Аралық вариациясы",
+    "strokeConsistency": "Штрих консистенттілігі",
+    "reversalScore": "Айналдыру бағасы",
     "flags": {
       "HIGH_REVERSAL_FREQUENCY": "Айна әріптерінің жиілігі жоғары",
       "IRREGULAR_SPACING": "Аралық біркелкі емес",

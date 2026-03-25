@@ -115,6 +115,34 @@ export interface HandwritingPipelineResult {
     stage3_cv_validation: boolean;
     stage4_weights_applied: boolean;
   };
+  // OpenCV cross-validation data
+  opencv_data?: {
+    gemini_score: number;
+    opencv_score: number;
+    concordance: number;
+    final_score: number | null;
+    confidence: 'high' | 'low';
+    opencv_details: {
+      spacing_variance: number;
+      stroke_consistency: number;
+      reversal_score: number;
+    };
+  };
+}
+
+export interface OpenCVAnalysisResponse {
+  gemini_score?: number;
+  opencv_score: number;
+  concordance?: number;
+  final_score?: number | null;
+  confidence?: 'high' | 'low';
+  opencv_details: {
+    spacing_variance: number;
+    stroke_consistency: number;
+    reversal_score: number;
+  };
+  contour_count: number;
+  analysis_note: string;
 }
 
 export interface GeminiWritingResult {

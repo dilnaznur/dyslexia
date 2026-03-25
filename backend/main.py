@@ -5,13 +5,16 @@ from fastapi import FastAPI, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import logging
-from typing import Dict
+from typing import Dict, List, Tuple
 import uuid
 from datetime import datetime
 import httpx
 import os
 from dotenv import load_dotenv
 from pathlib import Path
+import base64
+import numpy as np
+import cv2
 
 # Явно указываем путь к .env
 env_path = Path(__file__).parent / '.env'
@@ -411,6 +414,260 @@ async def gemini_proxy(request: dict):
     except Exception as e:
         logger.error(f"Gemini API error: {e}", exc_info=True)  # exc_info=True покажет полный traceback
         raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
+
+
+# ============================================================================
+# OpenCV Handwriting Analysis
+# ============================================================================
+
+def analyze_handwriting_opencv(image_bytes: bytes) -> dict:
+    """
+    Analyze handwriting image using OpenCV to extract objective metrics.
+
+    Returns:
+        dict with spacing_variance, stroke_consistency, reversal_score, and overall_score
+    """
+    # Decode image from bytes
+    nparr = np.frombuffer(image_bytes, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+    if img is None:
+        raise ValueError("Failed to decode image")
+
+    # Convert to grayscale
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # Apply Otsu's thresholding for better binarization
+    _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+    # Find contours (connected components representing letters/strokes)
+    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Filter out noise (too small contours)
+    min_area = 50
+    valid_contours = [c for c in contours if cv2.contourArea(c) > min_area]
+
+    if len(valid_contours) < 2:
+        # Not enough content to analyze
+        return {
+            "spacing_variance": 0.0,
+            "stroke_consistency": 100.0,
+            "reversal_score": 0.0,
+            "overall_score": 25.0,  # Conservative low score for sparse content
+            "contour_count": len(valid_contours),
+            "analysis_note": "Insufficient handwriting content for detailed analysis"
+        }
+
+    # -------------------------------------------------------------------------
+    # 1. Letter Spacing Variance (std deviation of gaps between components)
+    # -------------------------------------------------------------------------
+    bounding_boxes = [cv2.boundingRect(c) for c in valid_contours]
+    # Sort by x-coordinate (left to right)
+    bounding_boxes.sort(key=lambda b: b[0])
+
+    gaps = []
+    for i in range(1, len(bounding_boxes)):
+        prev_x, _, prev_w, _ = bounding_boxes[i-1]
+        curr_x, _, _, _ = bounding_boxes[i]
+        gap = curr_x - (prev_x + prev_w)
+        if gap > 0:  # Only consider positive gaps
+            gaps.append(gap)
+
+    if len(gaps) > 1:
+        spacing_mean = np.mean(gaps)
+        spacing_std = np.std(gaps)
+        # Coefficient of variation for spacing
+        spacing_cv = (spacing_std / spacing_mean * 100) if spacing_mean > 0 else 0
+        spacing_variance = min(100, spacing_cv)  # Cap at 100
+    else:
+        spacing_variance = 0.0
+
+    # -------------------------------------------------------------------------
+    # 2. Stroke Width Consistency (std deviation of contour line widths)
+    # -------------------------------------------------------------------------
+    stroke_widths = []
+    for contour in valid_contours:
+        # Calculate approximate stroke width using area/perimeter ratio
+        area = cv2.contourArea(contour)
+        perimeter = cv2.arcLength(contour, True)
+        if perimeter > 0:
+            # This approximates average stroke width
+            width_estimate = area / perimeter * 2
+            stroke_widths.append(width_estimate)
+
+    if len(stroke_widths) > 1:
+        stroke_mean = np.mean(stroke_widths)
+        stroke_std = np.std(stroke_widths)
+        # Higher consistency = lower std deviation relative to mean
+        stroke_cv = (stroke_std / stroke_mean * 100) if stroke_mean > 0 else 0
+        # Convert to consistency score (100 = perfectly consistent)
+        stroke_consistency = max(0, 100 - min(100, stroke_cv))
+    else:
+        stroke_consistency = 100.0
+
+    # -------------------------------------------------------------------------
+    # 3. Reversal Detection Score (horizontal symmetry analysis)
+    # -------------------------------------------------------------------------
+    reversal_scores = []
+    for contour in valid_contours:
+        x, y, w, h = cv2.boundingRect(contour)
+        if w < 10 or h < 10:  # Skip tiny components
+            continue
+
+        # Extract ROI
+        roi = binary[y:y+h, x:x+w]
+
+        # Flip horizontally
+        flipped = cv2.flip(roi, 1)
+
+        # Calculate similarity using moments
+        moments_original = cv2.moments(roi)
+        moments_flipped = cv2.moments(flipped)
+
+        # Hu moments for shape comparison (scale/rotation invariant)
+        hu_original = cv2.HuMoments(moments_original).flatten()
+        hu_flipped = cv2.HuMoments(moments_flipped).flatten()
+
+        # Log transform for better comparison
+        hu_original = -np.sign(hu_original) * np.log10(np.abs(hu_original) + 1e-10)
+        hu_flipped = -np.sign(hu_flipped) * np.log10(np.abs(hu_flipped) + 1e-10)
+
+        # Calculate similarity (lower = more symmetric = potential reversal)
+        similarity = np.sum(np.abs(hu_original - hu_flipped))
+
+        # Very symmetric shapes might be reversed letters (b/d, p/q)
+        # Scores below 0.5 indicate high symmetry
+        if similarity < 0.5:
+            reversal_scores.append(100 - similarity * 200)  # High symmetry = high reversal risk
+        else:
+            reversal_scores.append(max(0, 50 - similarity * 10))
+
+    if reversal_scores:
+        reversal_score = np.mean(reversal_scores)
+    else:
+        reversal_score = 0.0
+
+    # -------------------------------------------------------------------------
+    # 4. Overall Regularity Score (0-100, derived from above metrics)
+    # -------------------------------------------------------------------------
+    # Weights: spacing irregularity is concerning (40%), stroke inconsistency (35%), reversals (25%)
+    # Lower is better for spacing variance and reversal; higher is better for consistency
+
+    # Normalize scores: convert all to "risk" scores where higher = more concerning
+    spacing_risk = spacing_variance  # Already 0-100, higher = more variance = more risk
+    consistency_risk = 100 - stroke_consistency  # Convert: low consistency = high risk
+    reversal_risk = reversal_score  # Already 0-100, higher = more reversals
+
+    # Calculate overall risk score (weighted average)
+    overall_risk = (spacing_risk * 0.40 + consistency_risk * 0.35 + reversal_risk * 0.25)
+    overall_score = min(100, max(0, overall_risk))
+
+    return {
+        "spacing_variance": round(spacing_variance, 2),
+        "stroke_consistency": round(stroke_consistency, 2),
+        "reversal_score": round(reversal_score, 2),
+        "overall_score": round(overall_score, 2),
+        "contour_count": len(valid_contours),
+        "analysis_note": "Full OpenCV analysis completed"
+    }
+
+
+@app.post("/api/opencv-handwriting", tags=["OpenCV Analysis"])
+async def opencv_handwriting_analysis(request: dict):
+    """
+    Analyze handwriting image using OpenCV computer vision.
+
+    Accepts base64-encoded image and returns objective CV metrics:
+    - spacing_variance: Variability in letter spacing (0-100, lower = more regular)
+    - stroke_consistency: Consistency of stroke widths (0-100, higher = more consistent)
+    - reversal_score: Detection of potentially reversed letters (0-100, higher = more reversals)
+    - overall_score: Combined dyslexia risk indicator (0-100)
+    """
+    try:
+        image_base64 = request.get("imageBase64", "")
+        gemini_score = request.get("geminiScore", None)
+
+        if not image_base64:
+            raise HTTPException(status_code=400, detail="Missing imageBase64 in request")
+
+        # Remove data URL prefix if present
+        if "," in image_base64:
+            image_base64 = image_base64.split(",")[-1]
+
+        # Decode base64 to bytes
+        try:
+            image_bytes = base64.b64decode(image_base64)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid base64 image: {str(e)}")
+
+        # Run OpenCV analysis
+        opencv_result = analyze_handwriting_opencv(image_bytes)
+
+        # Calculate concordance if Gemini score is provided
+        if gemini_score is not None:
+            try:
+                gemini_score = float(gemini_score)
+                opencv_score = opencv_result["overall_score"]
+
+                # Concordance: how close are the two scores (100 = perfect agreement)
+                concordance = 100 - abs(gemini_score - opencv_score)
+
+                # Determine confidence level
+                if concordance >= 75:
+                    confidence = "high"
+                    # Weighted average: Gemini 70%, OpenCV 30%
+                    final_score = gemini_score * 0.7 + opencv_score * 0.3
+                else:
+                    confidence = "low"
+                    # Return both scores separately
+                    final_score = None
+
+                response = {
+                    "gemini_score": round(gemini_score, 2),
+                    "opencv_score": round(opencv_score, 2),
+                    "concordance": round(concordance, 2),
+                    "final_score": round(final_score, 2) if final_score is not None else None,
+                    "confidence": confidence,
+                    "opencv_details": {
+                        "spacing_variance": opencv_result["spacing_variance"],
+                        "stroke_consistency": opencv_result["stroke_consistency"],
+                        "reversal_score": opencv_result["reversal_score"]
+                    },
+                    "contour_count": opencv_result["contour_count"],
+                    "analysis_note": opencv_result["analysis_note"]
+                }
+            except (ValueError, TypeError):
+                # If gemini_score is invalid, return just OpenCV results
+                response = {
+                    "opencv_score": opencv_result["overall_score"],
+                    "opencv_details": {
+                        "spacing_variance": opencv_result["spacing_variance"],
+                        "stroke_consistency": opencv_result["stroke_consistency"],
+                        "reversal_score": opencv_result["reversal_score"]
+                    },
+                    "contour_count": opencv_result["contour_count"],
+                    "analysis_note": opencv_result["analysis_note"]
+                }
+        else:
+            response = {
+                "opencv_score": opencv_result["overall_score"],
+                "opencv_details": {
+                    "spacing_variance": opencv_result["spacing_variance"],
+                    "stroke_consistency": opencv_result["stroke_consistency"],
+                    "reversal_score": opencv_result["reversal_score"]
+                },
+                "contour_count": opencv_result["contour_count"],
+                "analysis_note": opencv_result["analysis_note"]
+            }
+
+        logger.info(f"OpenCV analysis completed: score={opencv_result['overall_score']}")
+        return response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"OpenCV analysis error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"OpenCV analysis failed: {str(e)}")
 
 
 @app.exception_handler(Exception)

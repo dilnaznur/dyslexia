@@ -241,6 +241,11 @@
     "status": "Статус",
     "confirmed": "Подтверждено",
     "partial": "Частично",
+    "highConfidence": "Высокая уверенность",
+    "lowConfidence": "Низкая уверенность",
+    "spacingVariance": "Вариация интервалов",
+    "strokeConsistency": "Консистентность штрихов",
+    "reversalScore": "Оценка зеркальности",
     "flags": {
       "HIGH_REVERSAL_FREQUENCY": "Высокая частота зеркальных букв",
       "IRREGULAR_SPACING": "Неравномерные интервалы",

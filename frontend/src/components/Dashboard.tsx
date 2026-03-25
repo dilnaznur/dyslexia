@@ -667,10 +667,67 @@ export default function Dashboard() {
                 <div className="stage-content">
                   <h4 className="font-bold text-text-primary">{t('handwritingPipeline.stage4.title')}</h4>
                   <p className="text-sm text-text-secondary">{t('handwritingPipeline.stage4.description')}</p>
-                  <div className="stage-data">
-                    <span>{t('handwritingPipeline.agreement')}: {handwritingPipeline.cv_agreement}%</span>
-                    <span>{t('handwritingPipeline.status')}: {handwritingPipeline.cv_confirmed ? t('handwritingPipeline.confirmed') : t('handwritingPipeline.partial')}</span>
-                  </div>
+
+                  {/* OpenCV Cross-Validation Details */}
+                  {handwritingPipeline.opencv_data ? (
+                    <>
+                      {/* Score Comparison */}
+                      <div className="stage-data">
+                        <span className="score-pill gemini">
+                          Gemini: {handwritingPipeline.opencv_data.gemini_score.toFixed(1)}
+                        </span>
+                        <span className="score-pill opencv">
+                          OpenCV: {handwritingPipeline.opencv_data.opencv_score.toFixed(1)}
+                        </span>
+                      </div>
+
+                      {/* Concordance with Color Indicator */}
+                      <div className="concordance-display mt-2">
+                        <span className="concordance-label">{t('handwritingPipeline.agreement')}:</span>
+                        <span
+                          className={`concordance-value ${
+                            handwritingPipeline.opencv_data.concordance >= 75
+                              ? 'concordance-high'
+                              : handwritingPipeline.opencv_data.concordance >= 50
+                              ? 'concordance-medium'
+                              : 'concordance-low'
+                          }`}
+                        >
+                          {handwritingPipeline.opencv_data.concordance.toFixed(1)}%
+                        </span>
+                        <span
+                          className={`confidence-badge ${
+                            handwritingPipeline.opencv_data.confidence === 'high'
+                              ? 'confidence-high'
+                              : 'confidence-low'
+                          }`}
+                        >
+                          {handwritingPipeline.opencv_data.confidence === 'high'
+                            ? t('handwritingPipeline.highConfidence')
+                            : t('handwritingPipeline.lowConfidence')}
+                        </span>
+                      </div>
+
+                      {/* OpenCV Details */}
+                      <div className="opencv-details mt-2">
+                        <span title="Variability in letter spacing (lower = more regular)">
+                          📏 {t('handwritingPipeline.spacingVariance')}: {handwritingPipeline.opencv_data.opencv_details.spacing_variance.toFixed(1)}
+                        </span>
+                        <span title="Consistency of stroke widths (higher = more consistent)">
+                          ✏️ {t('handwritingPipeline.strokeConsistency')}: {handwritingPipeline.opencv_data.opencv_details.stroke_consistency.toFixed(1)}%
+                        </span>
+                        <span title="Detection of potentially reversed letters (higher = more reversals)">
+                          🔄 {t('handwritingPipeline.reversalScore')}: {handwritingPipeline.opencv_data.opencv_details.reversal_score.toFixed(1)}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="stage-data">
+                      <span>{t('handwritingPipeline.agreement')}: {handwritingPipeline.cv_agreement}%</span>
+                      <span>{t('handwritingPipeline.status')}: {handwritingPipeline.cv_confirmed ? t('handwritingPipeline.confirmed') : t('handwritingPipeline.partial')}</span>
+                    </div>
+                  )}
+
                   <div className="stage-score">{t('handwritingPipeline.final')}: {handwritingPipeline.final_score.toFixed(1)}/100</div>
                 </div>
               </div>
@@ -1025,6 +1082,95 @@ export default function Dashboard() {
           font-weight: 600;
           cursor: pointer;
           margin-top: 20px;
+        }
+
+        /* OpenCV Cross-Validation Styles */
+        .score-pill {
+          padding: 6px 12px;
+          border-radius: 20px;
+          font-weight: 600;
+          font-size: 13px;
+        }
+
+        .score-pill.gemini {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+        }
+
+        .score-pill.opencv {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          color: white;
+        }
+
+        .concordance-display {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .concordance-label {
+          font-weight: 500;
+          color: #64748b;
+        }
+
+        .concordance-value {
+          font-weight: 700;
+          font-size: 18px;
+          padding: 4px 12px;
+          border-radius: 8px;
+        }
+
+        .concordance-high {
+          background: #d1fae5;
+          color: #065f46;
+        }
+
+        .concordance-medium {
+          background: #fef3c7;
+          color: #92400e;
+        }
+
+        .concordance-low {
+          background: #fee2e2;
+          color: #991b1b;
+        }
+
+        .confidence-badge {
+          padding: 4px 10px;
+          border-radius: 12px;
+          font-size: 12px;
+          font-weight: 600;
+          text-transform: uppercase;
+        }
+
+        .confidence-high {
+          background: #d1fae5;
+          color: #065f46;
+        }
+
+        .confidence-low {
+          background: #fef3c7;
+          color: #92400e;
+        }
+
+        .opencv-details {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .opencv-details span {
+          background: #f1f5f9;
+          padding: 6px 12px;
+          border-radius: 6px;
+          font-size: 13px;
+          color: #475569;
+          cursor: help;
+        }
+
+        .opencv-details span:hover {
+          background: #e2e8f0;
         }
       `}</style>
     </div>

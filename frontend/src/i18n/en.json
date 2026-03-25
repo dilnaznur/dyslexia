@@ -241,6 +241,11 @@
     "status": "Status",
     "confirmed": "Confirmed",
     "partial": "Partial",
+    "highConfidence": "High Confidence",
+    "lowConfidence": "Low Confidence",
+    "spacingVariance": "Spacing Variance",
+    "strokeConsistency": "Stroke Consistency",
+    "reversalScore": "Reversal Score",
     "flags": {
       "HIGH_REVERSAL_FREQUENCY": "High reversal frequency",
       "IRREGULAR_SPACING": "Irregular spacing",

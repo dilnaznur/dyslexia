@@ -8,6 +8,7 @@ import {
   ChildAge,
   HandwritingGeminiStructuredResult,
   HandwritingPipelineResult,
+  OpenCVAnalysisResponse,
 } from '@/types';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
@@ -276,6 +277,20 @@ async function processHandwritingResults(
   const cvConfirmed = await performCVCrossCheck(handwritingImageBase64, geminiData);
   const finalScore = calculateWeightedScore(clinicalValidated, cvConfirmed);
 
+  // Build OpenCV data object if available from backend
+  const opencvData = cvConfirmed.opencv_score !== undefined ? {
+    gemini_score: cvConfirmed.gemini_score ?? geminiData.overall_risk_score,
+    opencv_score: cvConfirmed.opencv_score,
+    concordance: cvConfirmed.concordance ?? cvConfirmed.agreement_percentage,
+    final_score: cvConfirmed.final_score ?? null,
+    confidence: cvConfirmed.confidence ?? (cvConfirmed.agreement_percentage >= 75 ? 'high' : 'low') as 'high' | 'low',
+    opencv_details: cvConfirmed.opencv_details ?? {
+      spacing_variance: 0,
+      stroke_consistency: 100,
+      reversal_score: 0,
+    },
+  } : undefined;
+
   return {
     gemini_raw_score: geminiData.overall_risk_score,
     age_calibrated_score: ageCalibrated.adjusted_score,
@@ -296,6 +311,7 @@ async function processHandwritingResults(
       stage3_cv_validation: cvConfirmed.confirmed,
       stage4_weights_applied: true,
     },
+    opencv_data: opencvData,
   };
 }
 
@@ -382,9 +398,67 @@ async function performCVCrossCheck(
   geminiData: HandwritingGeminiStructuredResult
 ): Promise<{
   cv_analysis_completed: boolean;
-  letter_density?: number;
-  irregularity_detected?: boolean;
-  agrees_with_gemini?: boolean;
+  opencv_score?: number;
+  gemini_score?: number;
+  concordance?: number;
+  final_score?: number | null;
+  confidence?: 'high' | 'low';
+  opencv_details?: {
+    spacing_variance: number;
+    stroke_consistency: number;
+    reversal_score: number;
+  };
+  agreement_percentage: number;
+  confirmed: boolean;
+  note?: string;
+}> {
+  try {
+    // Call backend OpenCV analysis endpoint
+    const response = await fetch(`${API_BASE_URL}/api/opencv-handwriting`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        imageBase64: imageBase64,
+        geminiScore: geminiData.overall_risk_score,
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn('OpenCV backend analysis failed, falling back to basic analysis');
+      throw new Error(`OpenCV API error: ${response.status}`);
+    }
+
+    const opencvResult: OpenCVAnalysisResponse = await response.json();
+
+    // Calculate agreement percentage based on concordance
+    const concordance = opencvResult.concordance ?? 75;
+    const agreement = concordance >= 75;
+
+    return {
+      cv_analysis_completed: true,
+      opencv_score: opencvResult.opencv_score,
+      gemini_score: opencvResult.gemini_score,
+      concordance: concordance,
+      final_score: opencvResult.final_score,
+      confidence: opencvResult.confidence,
+      opencv_details: opencvResult.opencv_details,
+      agreement_percentage: Math.round(concordance),
+      confirmed: agreement,
+    };
+  } catch (error) {
+    console.warn('OpenCV analysis failed, using fallback:', error);
+    // Fallback to basic client-side analysis
+    return performFallbackCVAnalysis(imageBase64, geminiData);
+  }
+}
+
+async function performFallbackCVAnalysis(
+  imageBase64: string,
+  geminiData: HandwritingGeminiStructuredResult
+): Promise<{
+  cv_analysis_completed: boolean;
   agreement_percentage: number;
   confirmed: boolean;
   note?: string;
@@ -412,11 +486,9 @@ async function performCVCrossCheck(
 
     return {
       cv_analysis_completed: true,
-      letter_density: letterDensity,
-      irregularity_detected: cvIrregularityDetected,
-      agrees_with_gemini: agreement,
       agreement_percentage: agreement ? 85 : 60,
       confirmed: agreement,
+      note: 'Fallback client-side analysis (OpenCV backend unavailable)',
     };
   } catch {
     return {
